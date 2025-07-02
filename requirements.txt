@@ -5,10 +5,4 @@ Flask-WTF==1.1.1
 WTForms==3.0.1
 Werkzeug==2.3.7
 gunicorn==21.2.0
-Flask
-Flask-SQLAlchemy
-Flask-WTF
-gunicorn
-Werkzeug
-WTForms
-email-validator
+email-validator==2.2.0
