@@ -239,6 +239,92 @@ def ver_feedbacks(turma_id, professor_id):
                          media_qualidade=round(media_qualidade, 1),
                          total_feedbacks=len(feedbacks))
 
+@app.route('/editar-feedback/<int:turma_id>/<int:professor_id>', methods=['GET', 'POST'])
+def editar_feedback(turma_id, professor_id):
+    # Verificar se usuário está logado
+    if 'user_id' not in session:
+        flash('Você precisa estar logado para acessar esta página!', 'error')
+        return redirect(url_for('login'))
+    
+    # Buscar o feedback do usuário
+    feedback = Feedback.query.filter_by(
+        pfk_Num_Idf_Tur=turma_id,
+        pfk_Cod_Prof=professor_id,
+        pfk_Num_Idf_Usr=session['user_id']
+    ).first_or_404()
+    
+    # Buscar informações da turma e professor
+    turma = Turma.query.get(turma_id)
+    professor = Professor.query.get(professor_id)
+    
+    form = FeedbackForm()
+    
+    # Carregar opções dinamicamente
+    form.professor.choices = [(str(p.Cod_Prof), p.Nom_Prof) for p in Professor.query.all()]
+    form.turma.choices = [(str(t.Num_Idf_Tur), f"Turma {t.Num_Idf_Tur} - {t.disciplina.Nom_Dis}") for t in Turma.query.all()]
+    
+    if request.method == 'GET':
+        # Preencher formulário com dados existentes
+        form.professor.data = str(feedback.pfk_Cod_Prof)
+        form.turma.data = str(feedback.pfk_Num_Idf_Tur)
+        form.dificuldade.data = feedback.Nvl_Dif
+        form.qualidade.data = feedback.Qual
+        form.comentario.data = feedback.Coment
+    
+    if form.validate_on_submit():
+        # Verificar se mudou turma/professor e já existe feedback
+        if (int(form.turma.data) != turma_id or int(form.professor.data) != professor_id):
+            feedback_existente = Feedback.query.filter_by(
+                pfk_Num_Idf_Tur=int(form.turma.data),
+                pfk_Cod_Prof=int(form.professor.data),
+                pfk_Num_Idf_Usr=session['user_id']
+            ).first()
+            
+            if feedback_existente:
+                flash('Você já tem um feedback para esta nova combinação de turma e professor!', 'error')
+                return render_template('feedback.html', form=form, editing=True, turma=turma, professor=professor)
+        
+        # Atualizar feedback
+        feedback.pfk_Num_Idf_Tur = int(form.turma.data)
+        feedback.pfk_Cod_Prof = int(form.professor.data)
+        feedback.Nvl_Dif = int(form.dificuldade.data)
+        feedback.Qual = form.qualidade.data
+        feedback.Coment = form.comentario.data
+        
+        try:
+            db.session.commit()
+            flash('Feedback atualizado com sucesso!', 'success')
+            return redirect(url_for('meus_feedbacks'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Erro ao atualizar feedback. Tente novamente.', 'error')
+    
+    return render_template('feedback.html', form=form, editing=True, turma=turma, professor=professor)
+
+@app.route('/excluir-feedback/<int:turma_id>/<int:professor_id>', methods=['POST'])
+def excluir_feedback(turma_id, professor_id):
+    # Verificar se usuário está logado
+    if 'user_id' not in session:
+        flash('Você precisa estar logado para acessar esta página!', 'error')
+        return redirect(url_for('login'))
+    
+    # Buscar o feedback do usuário
+    feedback = Feedback.query.filter_by(
+        pfk_Num_Idf_Tur=turma_id,
+        pfk_Cod_Prof=professor_id,
+        pfk_Num_Idf_Usr=session['user_id']
+    ).first_or_404()
+    
+    try:
+        db.session.delete(feedback)
+        db.session.commit()
+        flash('Feedback excluído com sucesso!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Erro ao excluir feedback. Tente novamente.', 'error')
+    
+    return redirect(url_for('meus_feedbacks'))
+
 # Função auxiliar para verificar se usuário é admin
 def is_admin():
     return session.get('user_type') == 2

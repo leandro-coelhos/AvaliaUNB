@@ -1,7 +1,8 @@
-
 {% extends "base.html" %}
 
-{% block title %}Feedback - AvaliaUNB{% endblock %}
+{% block title %}
+{% if editing %}Editar Feedback{% else %}Feedback{% endif %} - AvaliaUNB
+{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
@@ -9,7 +10,25 @@
         <div class="col-md-8 col-lg-6">
             <div class="card shadow">
                 <div class="card-body p-4">
-                    <h3 class="card-title text-center mb-4">Enviar Feedback</h3>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="card-title text-center mb-4">
+                            {% if editing %}
+                                Editar Feedback
+                            {% else %}
+                                Enviar Feedback
+                            {% endif %}
+                        </h3>
+                        {% if editing %}
+                            <a href="{{ url_for('meus_feedbacks') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                        {% endif %}
+                    </div>
+                    {% if editing and turma and professor %}
+                        <p class="mb-0 mt-2 text-muted">
+                            Editando: {{ turma.disciplina.Nom_Dis }} - Turma {{ turma.Num_Idf_Tur }} - Professor {{ professor.Nom_Prof }}
+                        </p>
+                    {% endif %}
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i>
                         <strong>Importante:</strong> Você pode enviar apenas um feedback por combinação de turma e professor.
@@ -88,7 +107,12 @@
                         </div>
 
                         <div class="d-grid">
-                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                            {% if editing %}
+                                {{ form.submit(value="Atualizar Feedback", class="btn btn-primary btn-lg") }}
+                                <a href="{{ url_for('meus_feedbacks') }}" class="btn btn-secondary btn-lg ms-2">Cancelar</a>
+                            {% else %}
+                                {{ form.submit(class="btn btn-primary btn-lg") }}
+                            {% endif %}
                         </div>
                     </form>
 

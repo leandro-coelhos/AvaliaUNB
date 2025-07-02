@@ -37,7 +37,7 @@
                                         <strong>Professor:</strong> {{ professor.Nom_Prof }}<br>
                                         <strong>Comentário:</strong> {{ feedback.Coment }}<br>
                                     </p>
-                                    <div class="d-flex justify-content-between">
+                                    <div class="d-flex justify-content-between mb-3">
                                         <span class="badge bg-primary">
                                             <i class="fas fa-star"></i> Qualidade: {{ feedback.Qual }}/5
                                         </span>
@@ -45,12 +45,51 @@
                                             <i class="fas fa-chart-line"></i> Dificuldade: {{ feedback.Nvl_Dif }}/5
                                         </span>
                                     </div>
+                                    <div class="d-flex gap-2">
+                                        <a href="{{ url_for('editar_feedback', turma_id=turma.Num_Idf_Tur, professor_id=professor.Cod_Prof) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#deleteModal{{ turma.Num_Idf_Tur }}_{{ professor.Cod_Prof }}">
+                                            <i class="fas fa-trash"></i> Excluir
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="card-footer bg-transparent">
                                     <small class="text-muted">
                                         <i class="fas fa-check-circle text-success"></i> Feedback enviado
                                     </small>
                                 </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Modal de confirmação para excluir -->
+                        <div class="modal fade" id="deleteModal{{ turma.Num_Idf_Tur }}_{{ professor.Cod_Prof }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Confirmar Exclusão</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>Tem certeza que deseja excluir seu feedback para:</p>
+                                        <strong>{{ disciplina.Nom_Dis }} - Turma {{ turma.Num_Idf_Tur }}</strong><br>
+                                        <strong>Professor: {{ professor.Nom_Prof }}</strong>
+                                        <p class="text-danger mt-2">Esta ação não pode ser desfeita.</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <form method="POST" action="{{ url_for('excluir_feedback', turma_id=turma.Num_Idf_Tur, professor_id=professor.Cod_Prof) }}" style="display: inline;">
+                                            <button type="submit" class="btn btn-danger">
+                                                <i class="fas fa-trash"></i> Excluir Feedback
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                             </div>
                         </div>
                     {% endfor %}
