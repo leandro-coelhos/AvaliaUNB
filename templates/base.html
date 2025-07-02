@@ -42,6 +42,15 @@
                             <a class="nav-link" href="{{ url_for('listar_disciplinas') }}">Disciplinas</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('criar_feedback') }}">Novo Feedback</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('meus_feedbacks') }}">Meus Feedbacks</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('listar_turmas_avaliadas') }}">Turmas Avaliadas</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('logout') }}">Sair</a>
                         </li>
                     {% else %}

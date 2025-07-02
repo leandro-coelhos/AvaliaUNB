@@ -123,6 +123,17 @@ def criar_feedback():
     form.turma.choices = [(str(t.Num_Idf_Tur), f"Turma {t.Num_Idf_Tur} - {t.disciplina.Nom_Dis}") for t in Turma.query.all()]
     
     if form.validate_on_submit():
+        # Verificar se o usuário já deu feedback para esta turma
+        feedback_existente = Feedback.query.filter_by(
+            pfk_Num_Idf_Tur=int(form.turma.data),
+            pfk_Cod_Prof=int(form.professor.data),
+            pfk_Num_Idf_Usr=session['user_id']
+        ).first()
+        
+        if feedback_existente:
+            flash('Você já enviou um feedback para esta turma com este professor!', 'error')
+            return render_template('feedback.html', form=form)
+        
         novo_feedback = Feedback(
             pfk_Num_Idf_Tur=int(form.turma.data),
             pfk_Cod_Prof=int(form.professor.data),
@@ -169,6 +180,31 @@ def listar_turmas_avaliadas():
     ).all()
     
     return render_template('turmas_avaliadas.html', turmas_professores=turmas_professores)
+
+@app.route('/meus-feedbacks')
+def meus_feedbacks():
+    # Verificar se usuário está logado
+    if 'user_id' not in session:
+        flash('Você precisa estar logado para acessar esta página!', 'error')
+        return redirect(url_for('login'))
+    
+    # Buscar todos os feedbacks do usuário logado
+    feedbacks_usuario = db.session.query(
+        Feedback,
+        Turma,
+        Professor,
+        Disciplina
+    ).join(
+        Turma, Feedback.pfk_Num_Idf_Tur == Turma.Num_Idf_Tur
+    ).join(
+        Professor, Feedback.pfk_Cod_Prof == Professor.Cod_Prof
+    ).join(
+        Disciplina, Turma.fk_Cod_Dis == Disciplina.Cod_Dis
+    ).filter(
+        Feedback.pfk_Num_Idf_Usr == session['user_id']
+    ).all()
+    
+    return render_template('meus_feedbacks.html', feedbacks=feedbacks_usuario)
 
 @app.route('/feedbacks/<int:turma_id>/<int:professor_id>')
 def ver_feedbacks(turma_id, professor_id):

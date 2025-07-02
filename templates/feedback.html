@@ -10,6 +10,10 @@
             <div class="card shadow">
                 <div class="card-body p-4">
                     <h3 class="card-title text-center mb-4">Enviar Feedback</h3>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Importante:</strong> Você pode enviar apenas um feedback por combinação de turma e professor.
+                    </div>
                     <form method="POST">
                         {{ form.hidden_tag() }}
                         {% with messages = get_flashed_messages(with_categories=true) %}
