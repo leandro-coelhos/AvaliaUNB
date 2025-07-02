@@ -1,7 +1,8 @@
 
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import db, Usuario, TipoUsuario, Departamento, Disciplina, Professor, Turma, PeriodoLetivo
+from models import db, Usuario, TipoUsuario, Departamento, Disciplina, Professor, Turma, PeriodoLetivo, Feedback
+from forms import LoginForm, CadastroForm, FeedbackForm
 import os
 
 app = Flask(__name__)
@@ -25,9 +26,11 @@ def home():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        senha = request.form.get('senha')
+    form = LoginForm()
+    
+    if form.validate_on_submit():
+        email = form.email.data
+        senha = form.senha.data
         
         # Buscar usuário no banco
         usuario = Usuario.query.filter_by(Email_Usr=email).first()
@@ -43,45 +46,30 @@ def login():
         else:
             flash('Email ou senha incorretos!', 'error')
     
-    return render_template('login.html')
+    return render_template('login.html', form=form)
 
 @app.route('/cadastro', methods=['GET', 'POST'])
 def cadastro():
-    if request.method == 'POST':
-        nome = request.form.get('nome')
-        email = request.form.get('email')
-        telefone = request.form.get('telefone')
-        matricula = request.form.get('matricula')
-        senha = request.form.get('senha')
-        confirmar_senha = request.form.get('confirmar_senha')
-        tipo_usuario = request.form.get('tipo_usuario')
-        
-        # Validações
-        if senha != confirmar_senha:
-            flash('As senhas não conferem!', 'error')
-            return render_template('cadastro.html')
-        
-        if len(senha) < 6:
-            flash('A senha deve ter pelo menos 6 caracteres!', 'error')
-            return render_template('cadastro.html')
-        
+    form = CadastroForm()
+    
+    if form.validate_on_submit():
         # Verificar se o usuário já existe
-        usuario_existente = Usuario.query.filter_by(Email_Usr=email).first()
+        usuario_existente = Usuario.query.filter_by(Email_Usr=form.email.data).first()
         if usuario_existente:
             flash('Este email já está cadastrado!', 'error')
-            return render_template('cadastro.html')
+            return render_template('cadastro.html', form=form)
         
         # Hash da senha
-        senha_hash = generate_password_hash(senha)
+        senha_hash = generate_password_hash(form.senha.data)
         
         # Criar novo usuário
         novo_usuario = Usuario(
-            Nom_Usr=nome,
-            Email_Usr=email,
-            Tel_Usr=telefone,
-            Mat_Usr=matricula,
+            Nom_Usr=form.nome.data,
+            Email_Usr=form.email.data,
+            Tel_Usr=form.telefone.data,
+            Mat_Usr=form.matricula.data,
             Senha_Usr=senha_hash,
-            fk_Cod_Tp_Usr=int(tipo_usuario)
+            fk_Cod_Tp_Usr=int(form.tipo_usuario.data)
         )
         
         try:
@@ -93,7 +81,7 @@ def cadastro():
             db.session.rollback()
             flash('Erro ao realizar cadastro. Tente novamente.', 'error')
     
-    return render_template('cadastro.html')
+    return render_template('cadastro.html', form=form)
 
 @app.route('/logout')
 def logout():
@@ -120,6 +108,40 @@ def listar_disciplinas():
     
     disciplinas = Disciplina.query.all()
     return render_template('disciplinas.html', disciplinas=disciplinas)
+
+@app.route('/feedback', methods=['GET', 'POST'])
+def criar_feedback():
+    # Verificar se usuário está logado
+    if 'user_id' not in session:
+        flash('Você precisa estar logado para acessar esta página!', 'error')
+        return redirect(url_for('login'))
+    
+    form = FeedbackForm()
+    
+    # Carregar opções dinamicamente
+    form.professor.choices = [(str(p.Cod_Prof), p.Nom_Prof) for p in Professor.query.all()]
+    form.turma.choices = [(str(t.Num_Idf_Tur), f"Turma {t.Num_Idf_Tur} - {t.disciplina.Nom_Dis}") for t in Turma.query.all()]
+    
+    if form.validate_on_submit():
+        novo_feedback = Feedback(
+            pfk_Num_Idf_Tur=int(form.turma.data),
+            pfk_Cod_Prof=int(form.professor.data),
+            pfk_Num_Idf_Usr=session['user_id'],
+            Nvl_Dif=int(form.dificuldade.data),
+            Qual=form.qualidade.data,
+            Coment=form.comentario.data
+        )
+        
+        try:
+            db.session.add(novo_feedback)
+            db.session.commit()
+            flash('Feedback enviado com sucesso!', 'success')
+            return redirect(url_for('home'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Erro ao enviar feedback. Tente novamente.', 'error')
+    
+    return render_template('feedback.html', form=form)
 
 # Função auxiliar para verificar se usuário é admin
 def is_admin():

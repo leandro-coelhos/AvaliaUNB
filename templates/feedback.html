@@ -1,0 +1,99 @@
+
+{% extends "base.html" %}
+
+{% block title %}Feedback - AvaliaUNB{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <h3 class="card-title text-center mb-4">Enviar Feedback</h3>
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
+                        <div class="mb-3">
+                            {{ form.turma.label(class="form-label") }}
+                            {{ form.turma(class="form-select" + (" is-invalid" if form.turma.errors else "")) }}
+                            {% if form.turma.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.turma.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.professor.label(class="form-label") }}
+                            {{ form.professor(class="form-select" + (" is-invalid" if form.professor.errors else "")) }}
+                            {% if form.professor.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.professor.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.dificuldade.label(class="form-label") }}
+                            {{ form.dificuldade(class="form-select" + (" is-invalid" if form.dificuldade.errors else "")) }}
+                            {% if form.dificuldade.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.dificuldade.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.qualidade.label(class="form-label") }}
+                            {{ form.qualidade(class="form-control" + (" is-invalid" if form.qualidade.errors else "")) }}
+                            {% if form.qualidade.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.qualidade.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.comentario.label(class="form-label") }}
+                            {{ form.comentario(class="form-control" + (" is-invalid" if form.comentario.errors else ""), rows="4") }}
+                            {% if form.comentario.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.comentario.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('home') }}" class="btn btn-secondary">Voltar</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
