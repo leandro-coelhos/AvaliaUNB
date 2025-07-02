@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="hero-section text-center">
+<section class="hero-section text-center wave-effect">
     <div class="container">
-        <h1 class="display-4 fw-bold mb-4">🎓 AvaliaUNB</h1>
+        <h1 class="display-4 fw-bold mb-4 animate-in">🎓 AvaliaUNB</h1>
         <p class="lead mb-5">Sistema de Avaliação de Professores da Universidade de Brasília</p>
-        <p class="mb-4" style="font-family: 'Comic Neue', cursive; font-size: 1.2rem;">Compartilhe sua experiência acadêmica e ajude outros estudantes a fazer escolhas informadas sobre disciplinas e professores! 🚀</p>
+        <p class="mb-4 animate-in" style="font-family: 'Comic Neue', cursive; font-size: 1.2rem; animation-delay: 0.3s;">Compartilhe sua experiência acadêmica e ajude outros estudantes a fazer escolhas informadas sobre disciplinas e professores! 🚀</p>
         {% if not session.user_id %}
         <div class="d-flex justify-content-center gap-3">
             <a href="{{ url_for('login') }}" class="btn btn-light btn-lg px-4">
@@ -30,10 +30,10 @@
 
         <div class="row g-4">
             <div class="col-md-4">
-                <div class="card h-100 feature-card border-0 shadow">
+                <div class="card h-100 feature-card border-0 shadow animate-in" style="animation-delay: 0.1s;">
                     <div class="card-body text-center p-4">
                         <div class="mb-3">
-                            <div style="font-size: 4rem;">🔍</div>
+                            <div style="font-size: 4rem; animation: pulse 2s infinite;">🔍</div>
                         </div>
                         <h5 class="card-title" style="color: var(--primary-color);">Busque Disciplinas</h5>
                         <p class="card-text" style="font-family: 'Comic Neue', cursive;">Encontre informações sobre disciplinas, professores e turmas disponíveis na UnB!</p>
@@ -42,10 +42,10 @@
             </div>
 
             <div class="col-md-4">
-                <div class="card h-100 feature-card border-0 shadow">
+                <div class="card h-100 feature-card border-0 shadow animate-in" style="animation-delay: 0.3s;">
                     <div class="card-body text-center p-4">
                         <div class="mb-3">
-                            <div style="font-size: 4rem;">⭐</div>
+                            <div style="font-size: 4rem; animation: bounce 2s infinite;">⭐</div>
                         </div>
                         <h5 class="card-title" style="color: var(--warning-color);">Avalie Professores</h5>
                         <p class="card-text" style="font-family: 'Comic Neue', cursive;">Compartilhe sua experiência sobre a qualidade das aulas e metodologia de ensino!</p>
@@ -54,10 +54,10 @@
             </div>
 
             <div class="col-md-4">
-                <div class="card h-100 feature-card border-0 shadow">
+                <div class="card h-100 feature-card border-0 shadow animate-in" style="animation-delay: 0.5s;">
                     <div class="card-body text-center p-4">
                         <div class="mb-3">
-                            <div style="font-size: 4rem;">💬</div>
+                            <div style="font-size: 4rem; animation: bounce 2s infinite 0.5s;">💬</div>
                         </div>
                         <h5 class="card-title" style="color: var(--success-color);">Deixe Comentários</h5>
                         <p class="card-text" style="font-family: 'Comic Neue', cursive;">Forneça feedback detalhado para ajudar outros estudantes em suas escolhas!</p>
