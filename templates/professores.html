@@ -1,0 +1,64 @@
+
+{% extends "base.html" %}
+
+{% block title %}Professores - AvaliaUNB{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold">Professores</h2>
+                <a href="{{ url_for('home') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-home"></i> Voltar ao Início
+                </a>
+            </div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% if professores %}
+                <div class="row">
+                    {% for professor in professores %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title text-primary">
+                                        <i class="fas fa-chalkboard-teacher"></i> {{ professor.Nom_Prof }}
+                                    </h5>
+                                    <p class="card-text">
+                                        <small class="text-muted">
+                                            <i class="fas fa-id-badge"></i> 
+                                            Código: {{ professor.Cod_Prof }}
+                                        </small>
+                                    </p>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <small class="text-muted">
+                                        <i class="fas fa-user"></i> Professor
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info text-center">
+                    <h4><i class="fas fa-info-circle"></i> Nenhum professor encontrado</h4>
+                    <p>Não há professores cadastrados no sistema ainda.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
