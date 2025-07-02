@@ -11,3 +11,4 @@ Flask-WTF
 gunicorn
 Werkzeug
 WTForms
+email-validator
