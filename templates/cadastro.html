@@ -38,6 +38,15 @@
                             <input type="text" class="form-control" id="matricula" name="matricula" required>
                         </div>
                         <div class="mb-3">
+                            <label for="senha" class="form-label">Senha</label>
+                            <input type="password" class="form-control" id="senha" name="senha" required minlength="6">
+                            <div class="form-text">A senha deve ter pelo menos 6 caracteres.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmar_senha" class="form-label">Confirmar Senha</label>
+                            <input type="password" class="form-control" id="confirmar_senha" name="confirmar_senha" required>
+                        </div>
+                        <div class="mb-3">
                             <label for="tipo_usuario" class="form-label">Tipo de Usuário</label>
                             <select class="form-select" id="tipo_usuario" name="tipo_usuario" required>
                                 <option value="">Selecione...</option>

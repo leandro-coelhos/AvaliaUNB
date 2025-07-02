@@ -69,6 +69,7 @@ class Usuario(db.Model):
     Email_Usr = db.Column(db.String(35))
     Tel_Usr = db.Column(db.String(20))
     Mat_Usr = db.Column(db.String(20))
+    Senha_Usr = db.Column(db.String(255))  # Campo para senha hashada
     fk_Cod_Tp_Usr = db.Column(db.SmallInteger, db.ForeignKey('Tp_Usr.Cod_Tp_Usr'), nullable=False)
     
     # Relacionamentos
