@@ -8,8 +8,10 @@ import os
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here-change-in-production'
 
-# Configuração do banco MySQL
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:password@localhost:3306/avaliacao_professores'
+# Configuração do banco PostgreSQL
+import os
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///avaliacao_professores.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Inicializar o banco de dados
