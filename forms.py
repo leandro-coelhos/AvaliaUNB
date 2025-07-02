@@ -53,13 +53,23 @@ class FeedbackForm(FlaskForm):
     turma = SelectField('Turma', coerce=int, validators=[
         DataRequired(message='Turma é obrigatória')
     ])
-    dificuldade = IntegerField('Nível de Dificuldade (1-5)', validators=[
-        DataRequired(message='Nível de dificuldade é obrigatório'),
-        NumberRange(min=1, max=5, message='Nível de dificuldade deve ser entre 1 e 5')
+    dificuldade = SelectField('Nível de Dificuldade', coerce=int, choices=[
+        (1, '1 - Muito Fácil'),
+        (2, '2 - Fácil'),
+        (3, '3 - Moderado'),
+        (4, '4 - Difícil'),
+        (5, '5 - Muito Difícil')
+    ], validators=[
+        DataRequired(message='Nível de dificuldade é obrigatório')
     ])
-    qualidade = IntegerField('Qualidade (1-5)', validators=[
-        DataRequired(message='Qualidade é obrigatória'),
-        NumberRange(min=1, max=5, message='Qualidade deve ser entre 1 e 5')
+    qualidade = SelectField('Qualidade', coerce=int, choices=[
+        (1, '1 - Muito Ruim'),
+        (2, '2 - Ruim'),
+        (3, '3 - Regular'),
+        (4, '4 - Bom'),
+        (5, '5 - Excelente')
+    ], validators=[
+        DataRequired(message='Qualidade é obrigatória')
     ])
     comentario = TextAreaField('Comentário', validators=[
         DataRequired(message='Comentário é obrigatório'),

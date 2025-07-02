@@ -84,7 +84,7 @@
 
                         <div class="mb-3">
                             {{ form.qualidade.label(class="form-label") }}
-                            {{ form.qualidade(class="form-control" + (" is-invalid" if form.qualidade.errors else "")) }}
+                            {{ form.qualidade(class="form-select" + (" is-invalid" if form.qualidade.errors else "")) }}
                             {% if form.qualidade.errors %}
                                 <div class="invalid-feedback">
                                     {% for error in form.qualidade.errors %}
