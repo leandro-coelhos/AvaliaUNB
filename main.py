@@ -161,14 +161,16 @@ def listar_turmas_avaliadas():
         flash('Você precisa estar logado para acessar esta página!', 'error')
         return redirect(url_for('login'))
     
-    # Buscar todas as combinações únicas de turma/professor que têm feedbacks
+    # Buscar todas as combinações únicas de turma/professor que têm feedbacks com médias
     turmas_professores = db.session.query(
         Feedback.pfk_Num_Idf_Tur,
         Feedback.pfk_Cod_Prof,
         Turma.Num_Idf_Tur,
         Professor.Nom_Prof,
         Disciplina.Nom_Dis,
-        db.func.count(Feedback.pfk_Num_Idf_Usr).label('total_feedbacks')
+        db.func.count(Feedback.pfk_Num_Idf_Usr).label('total_feedbacks'),
+        db.func.avg(Feedback.Qual).label('media_qualidade'),
+        db.func.avg(Feedback.Nvl_Dif).label('media_dificuldade')
     ).join(
         Turma, Feedback.pfk_Num_Idf_Tur == Turma.Num_Idf_Tur
     ).join(

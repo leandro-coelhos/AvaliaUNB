@@ -40,6 +40,20 @@
                                             {{ tp.total_feedbacks }} feedback{{ 's' if tp.total_feedbacks != 1 else '' }}
                                         </small>
                                     </p>
+                                    <div class="row mt-2">
+                                        <div class="col-6">
+                                            <small class="text-success">
+                                                <i class="fas fa-star"></i> 
+                                                <strong>Qualidade:</strong> {{ "%.1f"|format(tp.media_qualidade) }}/5
+                                            </small>
+                                        </div>
+                                        <div class="col-6">
+                                            <small class="text-info">
+                                                <i class="fas fa-chart-bar"></i> 
+                                                <strong>Dificuldade:</strong> {{ "%.1f"|format(tp.media_dificuldade) }}/5
+                                            </small>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="card-footer bg-transparent">
                                     <a href="{{ url_for('ver_feedbacks', turma_id=tp.pfk_Num_Idf_Tur, professor_id=tp.pfk_Cod_Prof) }}" 
