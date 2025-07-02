@@ -143,6 +143,66 @@ def criar_feedback():
     
     return render_template('feedback.html', form=form)
 
+@app.route('/turmas-avaliadas')
+def listar_turmas_avaliadas():
+    # Verificar se usuário está logado
+    if 'user_id' not in session:
+        flash('Você precisa estar logado para acessar esta página!', 'error')
+        return redirect(url_for('login'))
+    
+    # Buscar todas as combinações únicas de turma/professor que têm feedbacks
+    turmas_professores = db.session.query(
+        Feedback.pfk_Num_Idf_Tur,
+        Feedback.pfk_Cod_Prof,
+        Turma.Num_Idf_Tur,
+        Professor.Nom_Prof,
+        Disciplina.Nom_Dis,
+        db.func.count(Feedback.pfk_Num_Idf_Usr).label('total_feedbacks')
+    ).join(
+        Turma, Feedback.pfk_Num_Idf_Tur == Turma.Num_Idf_Tur
+    ).join(
+        Professor, Feedback.pfk_Cod_Prof == Professor.Cod_Prof
+    ).join(
+        Disciplina, Turma.fk_Cod_Dis == Disciplina.Cod_Dis
+    ).group_by(
+        Feedback.pfk_Num_Idf_Tur, Feedback.pfk_Cod_Prof
+    ).all()
+    
+    return render_template('turmas_avaliadas.html', turmas_professores=turmas_professores)
+
+@app.route('/feedbacks/<int:turma_id>/<int:professor_id>')
+def ver_feedbacks(turma_id, professor_id):
+    # Verificar se usuário está logado
+    if 'user_id' not in session:
+        flash('Você precisa estar logado para acessar esta página!', 'error')
+        return redirect(url_for('login'))
+    
+    # Buscar informações da turma e professor
+    turma = Turma.query.get_or_404(turma_id)
+    professor = Professor.query.get_or_404(professor_id)
+    
+    # Buscar todos os feedbacks para essa combinação turma/professor
+    feedbacks = Feedback.query.filter_by(
+        pfk_Num_Idf_Tur=turma_id,
+        pfk_Cod_Prof=professor_id
+    ).join(Usuario).all()
+    
+    # Calcular estatísticas
+    if feedbacks:
+        media_dificuldade = sum(f.Nvl_Dif for f in feedbacks) / len(feedbacks)
+        media_qualidade = sum(f.Qual for f in feedbacks) / len(feedbacks)
+    else:
+        media_dificuldade = 0
+        media_qualidade = 0
+    
+    return render_template('feedbacks_detalhes.html', 
+                         turma=turma, 
+                         professor=professor, 
+                         feedbacks=feedbacks,
+                         media_dificuldade=round(media_dificuldade, 1),
+                         media_qualidade=round(media_qualidade, 1),
+                         total_feedbacks=len(feedbacks))
+
 # Função auxiliar para verificar se usuário é admin
 def is_admin():
     return session.get('user_type') == 2
