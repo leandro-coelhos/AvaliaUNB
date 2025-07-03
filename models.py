@@ -1,6 +1,5 @@
 
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
 
 db = SQLAlchemy()
 
@@ -11,31 +10,6 @@ class Departamento(db.Model):
     nome_departamento = db.Column('Nom_Dep', db.String(25))
     
     disciplinas = db.relationship('Disciplina', backref='departamento', lazy=True)
-
-class TipoUsuario(db.Model):
-    __tablename__ = 'Tp_Usr'
-    
-    codigo_tipo_usuario = db.Column('Cod_Tp_Usr', db.SmallInteger, primary_key=True)
-    nome_tipo_usuario = db.Column('Nom_Tp_Usr', db.String(25))
-    
-    usuarios = db.relationship('Usuario', backref='tipo_usuario', lazy=True)
-
-class TipoAvaliacao(db.Model):
-    __tablename__ = 'Tp_Aval'
-    
-    codigo_tipo_avaliacao = db.Column('Cod_Tp_Aval', db.SmallInteger, primary_key=True)
-    nome_tipo_avaliacao = db.Column('Nom_Tp_Aval', db.String(25))
-    
-    criterios = db.relationship('CriterioAvaliacaoTurma', backref='tipo_avaliacao', lazy=True)
-
-class PeriodoLetivo(db.Model):
-    __tablename__ = 'Per_Let'
-    
-    codigo_periodo = db.Column('Cod_Per', db.String(10), primary_key=True)
-    ano_periodo = db.Column('Ano_Per', db.SmallInteger)
-    sequencia_periodo = db.Column('Seq_Per', db.SmallInteger)
-    
-    turmas = db.relationship('Turma', backref='periodo_letivo', lazy=True)
 
 class Disciplina(db.Model):
     __tablename__ = 'Dis'
@@ -55,6 +29,14 @@ class Professor(db.Model):
     
     feedbacks = db.relationship('Feedback', backref='professor', lazy=True)
 
+class TipoUsuario(db.Model):
+    __tablename__ = 'Tp_Usr'
+    
+    codigo_tipo_usuario = db.Column('Cod_Tp_Usr', db.SmallInteger, primary_key=True)
+    nome_tipo_usuario = db.Column('Nom_Tp_Usr', db.String(25))
+    
+    usuarios = db.relationship('Usuario', backref='tipo_usuario', lazy=True)
+
 class Usuario(db.Model):
     __tablename__ = 'Usr'
     
@@ -68,6 +50,15 @@ class Usuario(db.Model):
     
     feedbacks = db.relationship('Feedback', backref='usuario', lazy=True)
 
+class PeriodoLetivo(db.Model):
+    __tablename__ = 'Per_Let'
+    
+    codigo_periodo = db.Column('Cod_Per', db.String(10), primary_key=True)
+    ano_periodo = db.Column('Ano_Per', db.SmallInteger)
+    sequencial_periodo = db.Column('Seq_Per', db.SmallInteger)
+    
+    turmas = db.relationship('Turma', backref='periodo', lazy=True)
+
 class Turma(db.Model):
     __tablename__ = 'Tur'
     
@@ -77,6 +68,14 @@ class Turma(db.Model):
     
     criterios_avaliacao = db.relationship('CriterioAvaliacaoTurma', backref='turma', lazy=True)
     feedbacks = db.relationship('Feedback', backref='turma', lazy=True)
+
+class TipoAvaliacao(db.Model):
+    __tablename__ = 'Tp_Aval'
+    
+    codigo_tipo_avaliacao = db.Column('Cod_Tp_Aval', db.SmallInteger, primary_key=True)
+    nome_tipo_avaliacao = db.Column('Nom_Tp_Aval', db.String(25))
+    
+    criterios_avaliacao = db.relationship('CriterioAvaliacaoTurma', backref='tipo_avaliacao', lazy=True)
 
 class CriterioAvaliacaoTurma(db.Model):
     __tablename__ = 'Crit_Aval_Tur'
