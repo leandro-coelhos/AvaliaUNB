@@ -17,4 +17,3 @@ class FormularioUsuario(FlaskForm):
 
      def __init__(self, *args, **kwargs):
           super(FormularioUsuario, self).__init__(*args, **kwargs)
-          # Inicialização adicional se necessário

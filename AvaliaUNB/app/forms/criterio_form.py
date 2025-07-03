@@ -15,4 +15,3 @@ class FormularioCriterio(FlaskForm):
      
      def __init__(self, *args, **kwargs):
           super(FormularioCriterio, self).__init__(*args, **kwargs)
-          # Inicialização adicional se necessário

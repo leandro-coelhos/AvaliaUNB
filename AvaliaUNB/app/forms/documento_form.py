@@ -16,4 +16,3 @@ class FormularioDocumento(FlaskForm):
      
      def __init__(self, *args, **kwargs):
           super(FormularioDocumento, self).__init__(*args, **kwargs)
-          # Inicialização adicional se necessário
