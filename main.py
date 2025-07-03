@@ -3,7 +3,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 import io
 from flask_sqlalchemy import SQLAlchemy
 from forms import FormularioLogin, FormularioCadastro, FormularioFeedback
-from models import db, Usuario, Professor, Turma, Feedback, Disciplina, TipoUsuario, DocumentoFeedback
+from models import db, Usuario, Professor, Turma, Feedback, Disciplina, TipoUsuario, DocumentoAvaliacao, CriterioAvaliacaoTurma
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import text
 
@@ -116,20 +116,30 @@ def feedback():
             db.session.flush()
             
             if formulario.arquivo_pdf.data and formulario.tipo_documento.data:
+                criterio = CriterioAvaliacaoTurma.query.filter_by(
+                    fk_numero_identificacao_turma=formulario.turma.data
+                ).first()
+                
+                if not criterio:
+                    criterio = CriterioAvaliacaoTurma(
+                        fk_numero_identificacao_turma=formulario.turma.data,
+                        fk_codigo_tipo_avaliacao=1
+                    )
+                    db.session.add(criterio)
+                    db.session.flush()
+                
                 arquivo = formulario.arquivo_pdf.data
-                documento = DocumentoFeedback(
+                documento = DocumentoAvaliacao(
                     nome_arquivo=arquivo.filename,
                     tipo_documento=formulario.tipo_documento.data,
-                    conteudo_arquivo=arquivo.read(),
-                    fk_turma=formulario.turma.data,
-                    fk_professor=formulario.professor.data,
-                    fk_usuario=session['usuario_id']
+                    arquivo_documento=arquivo.read(),
+                    fk_numero_identificacao_avaliacao=criterio.numero_identificacao_avaliacao
                 )
                 db.session.add(documento)
             
             db.session.commit()
             flash('Feedback enviado com sucesso!', 'success')
-            return redirect(url_for('home'))me'))
+            return redirect(url_for('home'))
     
     return render_template('feedback.html', form=formulario)
 
@@ -164,20 +174,21 @@ def editar_feedback(turma_id, professor_id):
         feedback.comentario = formulario.comentario.data
         
         if formulario.arquivo_pdf.data and formulario.tipo_documento.data:
-            DocumentoFeedback.query.filter_by(
-                fk_turma=turma_id,
-                fk_professor=professor_id,
-                fk_usuario=session['usuario_id']
-            ).delete()
+            criterio = CriterioAvaliacaoTurma.query.filter_by(
+                fk_numero_identificacao_turma=turma_id
+            ).first()
+            
+            if criterio:
+                DocumentoAvaliacao.query.filter_by(
+                    fk_numero_identificacao_avaliacao=criterio.numero_identificacao_avaliacao
+                ).delete()
             
             arquivo = formulario.arquivo_pdf.data
-            documento = DocumentoFeedback(
+            documento = DocumentoAvaliacao(
                 nome_arquivo=arquivo.filename,
                 tipo_documento=formulario.tipo_documento.data,
-                conteudo_arquivo=arquivo.read(),
-                fk_turma=turma_id,
-                fk_professor=professor_id,
-                fk_usuario=session['usuario_id']
+                arquivo_documento=arquivo.read(),
+                fk_numero_identificacao_avaliacao=criterio.numero_identificacao_avaliacao
             )
             db.session.add(documento)
         
@@ -265,9 +276,9 @@ if __name__ == '__main__':
 
 @app.route('/documento/<int:documento_id>')
 def baixar_documento(documento_id):
-    documento = DocumentoFeedback.query.get_or_404(documento_id)
+    documento = DocumentoAvaliacao.query.get_or_404(documento_id)
     return send_file(
-        io.BytesIO(documento.conteudo_arquivo),
+        io.BytesIO(documento.arquivo_documento),
         mimetype='application/pdf',
         as_attachment=True,
         download_name=documento.nome_arquivo
@@ -276,5 +287,15 @@ def baixar_documento(documento_id):
 @app.route('/professor/<int:professor_id>/documentos')
 def documentos_professor(professor_id):
     professor = Professor.query.get_or_404(professor_id)
-    documentos = DocumentoFeedback.query.filter_by(fk_professor=professor_id).all()
+    documentos = db.session.query(DocumentoAvaliacao).join(
+        CriterioAvaliacaoTurma,
+        DocumentoAvaliacao.fk_numero_identificacao_avaliacao == CriterioAvaliacaoTurma.numero_identificacao_avaliacao
+    ).join(
+        Turma,
+        CriterioAvaliacaoTurma.fk_numero_identificacao_turma == Turma.numero_identificacao_turma
+    ).join(
+        Feedback,
+        (Feedback.pfk_numero_identificacao_turma == Turma.numero_identificacao_turma) &
+        (Feedback.pfk_codigo_professor == professor_id)
+    ).all()
     return render_template('documentos_professor.html', professor=professor, documentos=documentos)
