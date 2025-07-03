@@ -33,7 +33,7 @@
                         <i class="fas fa-info-circle"></i>
                         <strong>Importante:</strong> Você pode enviar apenas um feedback por combinação de turma e professor.
                     </div>
-                    <form method="POST">
+                    <form method="POST" enctype="multipart/form-data">
                         {{ form.hidden_tag() }}
                         {% with messages = get_flashed_messages(with_categories=true) %}
                             {% if messages %}
@@ -104,6 +104,36 @@
                                     {% endfor %}
                                 </div>
                             {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <h6 class="text-neon-pink">📄 Documentos (Opcional)</h6>
+                            <p class="text-muted small">Você pode anexar um documento PDF relacionado à disciplina (prova, plano de ensino, slides, etc.)</p>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.tipo_documento.label(class="form-label") }}
+                            {{ form.tipo_documento(class="form-select" + (" is-invalid" if form.tipo_documento.errors else "")) }}
+                            {% if form.tipo_documento.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.tipo_documento.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.arquivo_pdf.label(class="form-label") }}
+                            {{ form.arquivo_pdf(class="form-control" + (" is-invalid" if form.arquivo_pdf.errors else ""), accept=".pdf") }}
+                            {% if form.arquivo_pdf.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.arquivo_pdf.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Máximo 10MB, apenas arquivos PDF</div>
                         </div>
 
                         <div class="d-grid">

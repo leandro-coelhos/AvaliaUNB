@@ -1,5 +1,6 @@
 
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, PasswordField, SelectField, TextAreaField, IntegerField, SubmitField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, NumberRange
 from models import TipoUsuario
@@ -74,5 +75,16 @@ class FormularioFeedback(FlaskForm):
     comentario = TextAreaField('Comentário', validators=[
         DataRequired(message='Comentário é obrigatório'),
         Length(min=1, max=100, message='Comentário deve ter no máximo 100 caracteres')
+    ])
+    tipo_documento = SelectField('Tipo de Documento', choices=[
+        ('', 'Selecione o tipo (opcional)'),
+        ('prova', 'Prova'),
+        ('plano_ensino', 'Plano de Ensino'),
+        ('slide', 'Slide/Apresentação'),
+        ('material_apoio', 'Material de Apoio'),
+        ('outro', 'Outro')
+    ])
+    arquivo_pdf = FileField('Documento PDF (opcional)', validators=[
+        FileAllowed(['pdf'], 'Apenas arquivos PDF são permitidos!')
     ])
     enviar = SubmitField('Enviar Feedback')

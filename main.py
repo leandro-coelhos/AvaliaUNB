@@ -1,8 +1,9 @@
 
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
+import io
 from flask_sqlalchemy import SQLAlchemy
 from forms import FormularioLogin, FormularioCadastro, FormularioFeedback
-from models import db, Usuario, Professor, Turma, Feedback, Disciplina, TipoUsuario
+from models import db, Usuario, Professor, Turma, Feedback, Disciplina, TipoUsuario, DocumentoFeedback
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import text
 
@@ -112,9 +113,23 @@ def feedback():
                 comentario=formulario.comentario.data
             )
             db.session.add(novo_feedback)
+            db.session.flush()
+            
+            if formulario.arquivo_pdf.data and formulario.tipo_documento.data:
+                arquivo = formulario.arquivo_pdf.data
+                documento = DocumentoFeedback(
+                    nome_arquivo=arquivo.filename,
+                    tipo_documento=formulario.tipo_documento.data,
+                    conteudo_arquivo=arquivo.read(),
+                    fk_turma=formulario.turma.data,
+                    fk_professor=formulario.professor.data,
+                    fk_usuario=session['usuario_id']
+                )
+                db.session.add(documento)
+            
             db.session.commit()
             flash('Feedback enviado com sucesso!', 'success')
-            return redirect(url_for('home'))
+            return redirect(url_for('home'))me'))
     
     return render_template('feedback.html', form=formulario)
 
@@ -147,6 +162,25 @@ def editar_feedback(turma_id, professor_id):
         feedback.nivel_dificuldade = formulario.dificuldade.data
         feedback.qualidade = formulario.qualidade.data
         feedback.comentario = formulario.comentario.data
+        
+        if formulario.arquivo_pdf.data and formulario.tipo_documento.data:
+            DocumentoFeedback.query.filter_by(
+                fk_turma=turma_id,
+                fk_professor=professor_id,
+                fk_usuario=session['usuario_id']
+            ).delete()
+            
+            arquivo = formulario.arquivo_pdf.data
+            documento = DocumentoFeedback(
+                nome_arquivo=arquivo.filename,
+                tipo_documento=formulario.tipo_documento.data,
+                conteudo_arquivo=arquivo.read(),
+                fk_turma=turma_id,
+                fk_professor=professor_id,
+                fk_usuario=session['usuario_id']
+            )
+            db.session.add(documento)
+        
         db.session.commit()
         flash('Feedback atualizado com sucesso!', 'success')
         return redirect(url_for('meus_feedbacks'))
@@ -226,3 +260,21 @@ def feedbacks_turma(turma_id):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
+
+
+@app.route('/documento/<int:documento_id>')
+def baixar_documento(documento_id):
+    documento = DocumentoFeedback.query.get_or_404(documento_id)
+    return send_file(
+        io.BytesIO(documento.conteudo_arquivo),
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=documento.nome_arquivo
+    )
+
+@app.route('/professor/<int:professor_id>/documentos')
+def documentos_professor(professor_id):
+    professor = Professor.query.get_or_404(professor_id)
+    documentos = DocumentoFeedback.query.filter_by(fk_professor=professor_id).all()
+    return render_template('documentos_professor.html', professor=professor, documentos=documentos)

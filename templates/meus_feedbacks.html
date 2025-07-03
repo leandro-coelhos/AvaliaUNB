@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Meus Feedbacks - AvaliaUNB{% endblock %}
@@ -37,6 +36,19 @@
                                         <strong>Professor:</strong> {{ professor.Nom_Prof }}<br>
                                         <strong>Comentário:</strong> {{ feedback.Coment }}<br>
                                     </p>
+                                    {% set documento = feedback.documentos|first %}
+                                    {% if documento %}
+                                        <div class="mt-2">
+                                            <small class="text-neon-pink">
+                                                <i class="fas fa-file-pdf"></i> 
+                                                Documento anexado: 
+                                                <a href="{{ url_for('baixar_documento', documento_id=documento.id) }}" 
+                                                   class="text-neon-cyan" target="_blank">
+                                                    {{ documento.nome_arquivo }}
+                                                </a>
+                                            </small>
+                                        </div>
+                                    {% endif %}
                                     <div class="d-flex justify-content-between mb-3">
                                         <span class="badge bg-primary">
                                             <i class="fas fa-star"></i> Qualidade: {{ feedback.Qual }}/5
@@ -64,7 +76,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Modal de confirmação para excluir -->
                         <div class="modal fade" id="deleteModal{{ turma.Num_Idf_Tur }}_{{ professor.Cod_Prof }}" tabindex="-1">
                             <div class="modal-dialog">

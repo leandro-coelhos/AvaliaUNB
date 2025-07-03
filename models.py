@@ -101,3 +101,23 @@ class Feedback(db.Model):
     nivel_dificuldade = db.Column('Nvl_Dif', db.SmallInteger)
     qualidade = db.Column('Qual', db.SmallInteger)
     comentario = db.Column('Coment', db.String(100))
+    
+    documentos = db.relationship('DocumentoFeedback', backref='feedback', lazy=True, cascade='all, delete-orphan')
+
+class DocumentoFeedback(db.Model):
+    __tablename__ = 'doc_feedback'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    nome_arquivo = db.Column(db.String(255), nullable=False)
+    tipo_documento = db.Column(db.String(50), nullable=False)
+    conteudo_arquivo = db.Column(db.LargeBinary, nullable=False)
+    fk_turma = db.Column('fk_turma', db.SmallInteger, nullable=False)
+    fk_professor = db.Column('fk_professor', db.SmallInteger, nullable=False) 
+    fk_usuario = db.Column('fk_usuario', db.Integer, nullable=False)
+    
+    __table_args__ = (
+        db.ForeignKeyConstraint(
+            [fk_turma, fk_professor, fk_usuario],
+            ['Fdbk.pfk_Num_Idf_Tur', 'Fdbk.pfk_Cod_Prof', 'Fdbk.pfk_Num_Idf_Usr']
+        ),
+    )

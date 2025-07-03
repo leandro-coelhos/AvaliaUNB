@@ -1,0 +1,68 @@
+
+{% extends "base.html" %}
+
+{% block title %}Documentos - {{ professor.nome_professor }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark border-neon-cyan">
+                <div class="card-header bg-gradient-primary">
+                    <h4 class="mb-0 text-neon-cyan">
+                        <i class="fas fa-file-pdf"></i> Documentos - {{ professor.nome_professor }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <a href="{{ url_for('professores') }}" class="btn btn-outline-secondary mb-3">
+                        <i class="fas fa-arrow-left"></i> Voltar aos Professores
+                    </a>
+                    
+                    {% if documentos %}
+                        <div class="row">
+                            {% for documento in documentos %}
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="card bg-dark border-neon-pink h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="fas fa-file-pdf text-neon-pink fs-4 me-2"></i>
+                                                <div>
+                                                    <h6 class="card-title text-neon-cyan mb-1">
+                                                        {{ documento.nome_arquivo }}
+                                                    </h6>
+                                                    <span class="badge bg-gradient-info">
+                                                        {% if documento.tipo_documento == 'prova' %}
+                                                            Prova
+                                                        {% elif documento.tipo_documento == 'plano_ensino' %}
+                                                            Plano de Ensino
+                                                        {% elif documento.tipo_documento == 'slide' %}
+                                                            Slide/Apresentação
+                                                        {% elif documento.tipo_documento == 'material_apoio' %}
+                                                            Material de Apoio
+                                                        {% else %}
+                                                            Outro
+                                                        {% endif %}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <a href="{{ url_for('baixar_documento', documento_id=documento.id) }}" 
+                                               class="btn btn-sm btn-outline-primary w-100" target="_blank">
+                                                <i class="fas fa-download"></i> Baixar PDF
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center">
+                            <i class="fas fa-file-pdf text-muted fs-1 mb-3"></i>
+                            <p class="text-muted">Nenhum documento disponível para este professor.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
