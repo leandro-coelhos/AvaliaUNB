@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from forms import FormularioLogin, FormularioCadastro, FormularioFeedback
 from models import db, Usuario, Professor, Turma, Feedback, Disciplina, TipoUsuario
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import text
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'sua_chave_secreta_aqui'
@@ -68,8 +69,14 @@ def logout():
 
 @app.route('/professores')
 def professores():
-    lista_professores = Professor.query.all()
-    return render_template('professores.html', professores=lista_professores)
+    try:
+        resultado = db.session.execute(text("CALL ListarProfessoresComFeedbacks()"))
+        professores_data = resultado.fetchall()
+        return render_template('professores.html', professores=professores_data)
+    except Exception as e:
+        flash(f'Erro ao buscar professores: {str(e)}', 'danger')
+        lista_professores = Professor.query.all()
+        return render_template('professores.html', professores=lista_professores)
 
 @app.route('/disciplinas')
 def disciplinas():
@@ -173,25 +180,49 @@ def excluir_feedback(turma_id, professor_id):
 @app.route('/professor/<int:professor_id>/feedbacks')
 def feedbacks_detalhes(professor_id):
     professor = Professor.query.get_or_404(professor_id)
-    feedbacks_professor = Feedback.query.filter_by(pfk_codigo_professor=professor_id).all()
     
-    if feedbacks_professor:
-        media_qualidade = sum(f.qualidade for f in feedbacks_professor) / len(feedbacks_professor)
-        media_dificuldade = sum(f.nivel_dificuldade for f in feedbacks_professor) / len(feedbacks_professor)
-    else:
-        media_qualidade = 0
-        media_dificuldade = 0
-    
-    return render_template('feedbacks_detalhes.html', 
-                         professor=professor, 
-                         feedbacks=feedbacks_professor,
-                         media_qualidade=round(media_qualidade, 1),
-                         media_dificuldade=round(media_dificuldade, 1))
+    try:
+        resultado_feedbacks = db.session.execute(text("CALL BuscarFeedbacksProfessor(:prof_id)"), {"prof_id": professor_id})
+        feedbacks_data = resultado_feedbacks.fetchall()
+        
+        resultado_medias = db.session.execute(text("CALL CalcularMediasProfessor(:prof_id)"), {"prof_id": professor_id})
+        medias_data = resultado_medias.fetchone()
+        
+        if medias_data:
+            media_qualidade = round(float(medias_data.media_qualidade), 1)
+            media_dificuldade = round(float(medias_data.media_dificuldade), 1)
+        else:
+            media_qualidade = 0
+            media_dificuldade = 0
+        
+        return render_template('feedbacks_detalhes.html', 
+                             professor=professor, 
+                             feedbacks=feedbacks_data,
+                             media_qualidade=media_qualidade,
+                             media_dificuldade=media_dificuldade)
+    except Exception as e:
+        flash(f'Erro ao buscar feedbacks: {str(e)}', 'danger')
+        return redirect(url_for('professores'))
 
 @app.route('/turmas_avaliadas')
 def turmas_avaliadas():
     turmas_com_feedbacks = db.session.query(Turma).join(Feedback).distinct().all()
     return render_template('turmas_avaliadas.html', turmas=turmas_com_feedbacks)
+
+@app.route('/turma/<int:turma_id>/feedbacks')
+def feedbacks_turma(turma_id):
+    turma = Turma.query.get_or_404(turma_id)
+    
+    try:
+        resultado = db.session.execute(text("CALL BuscarFeedbacksPorTurma(:turma_id)"), {"turma_id": turma_id})
+        feedbacks_data = resultado.fetchall()
+        
+        return render_template('feedbacks_turma.html', 
+                             turma=turma, 
+                             feedbacks=feedbacks_data)
+    except Exception as e:
+        flash(f'Erro ao buscar feedbacks da turma: {str(e)}', 'danger')
+        return redirect(url_for('turmas_avaliadas'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

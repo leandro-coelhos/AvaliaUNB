@@ -1,0 +1,51 @@
+
+{% extends "base.html" %}
+
+{% block title %}Feedbacks da Turma {{ turma.numero_identificacao_turma }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="text-center mb-4">Feedbacks da Turma {{ turma.numero_identificacao_turma }}</h2>
+            <h4 class="text-center mb-4">Disciplina: {{ turma.disciplina.nome_disciplina }}</h4>
+            
+            {% if feedbacks %}
+                <div class="row">
+                    {% for feedback in feedbacks %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Professor: {{ feedback.nome_professor }}</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Avaliado por:</strong> {{ feedback.nome_usuario }}</p>
+                                    <p><strong>Qualidade:</strong> 
+                                        <span class="badge badge-{% if feedback.qualidade >= 4 %}success{% elif feedback.qualidade >= 3 %}warning{% else %}danger{% endif %}">
+                                            {{ feedback.qualidade }}/5
+                                        </span>
+                                    </p>
+                                    <p><strong>Dificuldade:</strong> 
+                                        <span class="badge badge-{% if feedback.nivel_dificuldade >= 4 %}danger{% elif feedback.nivel_dificuldade >= 3 %}warning{% else %}success{% endif %}">
+                                            {{ feedback.nivel_dificuldade }}/5
+                                        </span>
+                                    </p>
+                                    <p><strong>Comentário:</strong> {{ feedback.comentario }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info text-center">
+                    <h4>Nenhum feedback encontrado para esta turma.</h4>
+                </div>
+            {% endif %}
+            
+            <div class="text-center mt-4">
+                <a href="{{ url_for('turmas_avaliadas') }}" class="btn btn-primary">Voltar para Turmas Avaliadas</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
