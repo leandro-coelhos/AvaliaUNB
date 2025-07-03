@@ -4,7 +4,7 @@ from wtforms import StringField, PasswordField, SelectField, TextAreaField, Inte
 from wtforms.validators import DataRequired, Email, Length, EqualTo, NumberRange
 from models import TipoUsuario
 
-class LoginForm(FlaskForm):
+class FormularioLogin(FlaskForm):
     email = StringField('Email', validators=[
         DataRequired(message='Email é obrigatório'),
         Email(message='Email inválido')
@@ -12,9 +12,9 @@ class LoginForm(FlaskForm):
     senha = PasswordField('Senha', validators=[
         DataRequired(message='Senha é obrigatória')
     ])
-    submit = SubmitField('Entrar')
+    enviar = SubmitField('Entrar')
 
-class CadastroForm(FlaskForm):
+class FormularioCadastro(FlaskForm):
     nome = StringField('Nome Completo', validators=[
         DataRequired(message='Nome é obrigatório'),
         Length(min=2, max=25, message='Nome deve ter entre 2 e 25 caracteres')
@@ -44,9 +44,9 @@ class CadastroForm(FlaskForm):
         choices=[('1', 'Aluno'), ('2', 'Administrador')],
         validators=[DataRequired(message='Tipo de usuário é obrigatório')]
     )
-    submit = SubmitField('Cadastrar')
+    enviar = SubmitField('Cadastrar')
 
-class FeedbackForm(FlaskForm):
+class FormularioFeedback(FlaskForm):
     professor = SelectField('Professor', coerce=int, validators=[
         DataRequired(message='Professor é obrigatório')
     ])
@@ -75,4 +75,4 @@ class FeedbackForm(FlaskForm):
         DataRequired(message='Comentário é obrigatório'),
         Length(min=1, max=100, message='Comentário deve ter no máximo 100 caracteres')
     ])
-    submit = SubmitField('Enviar Feedback')
+    enviar = SubmitField('Enviar Feedback')
