@@ -375,16 +375,27 @@ def feedbacks_detalhes(professor_id):
         if feedbacks_data:
             professor_nome = feedbacks_data[0].nome_professor
             disciplina_codigo = feedbacks_data[0].disciplina_codigo
+            
+            # Calcular estatísticas
+            total_feedbacks = len(feedbacks_data)
+            media_qualidade = sum(feedback.qualidade for feedback in feedbacks_data) / total_feedbacks
+            media_dificuldade = sum(feedback.nivel_dificuldade for feedback in feedbacks_data) / total_feedbacks
         else:
             professor = Professor.query.get_or_404(professor_id)
             professor_nome = professor.nome_professor
             disciplina_codigo = 'CIC0004'  # fallback
+            total_feedbacks = 0
+            media_qualidade = 0
+            media_dificuldade = 0
 
         return render_template('feedbacks_detalhes.html', 
                              feedbacks=feedbacks_data, 
                              professor_nome=professor_nome,
                              professor_id=professor_id,
-                             disciplina_codigo=disciplina_codigo)
+                             disciplina_codigo=disciplina_codigo,
+                             total_feedbacks=total_feedbacks,
+                             media_qualidade=round(media_qualidade, 1),
+                             media_dificuldade=round(media_dificuldade, 1))
     except Exception as e:
         flash(f'Erro ao buscar feedbacks: {str(e)}', 'danger')
         return redirect(url_for('disciplinas'))
