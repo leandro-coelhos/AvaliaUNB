@@ -20,8 +20,9 @@ O sistema AvaliaUNB é uma aplicação web desenvolvida em Flask para gerenciame
 ├── main.py              # Aplicação principal Flask
 ├── models.py            # Modelos de dados SQLAlchemy
 ├── forms.py             # Formulários WTForms
+├── procedures.py        # Stored procedures simuladas
 ├── popular_dados.py     # Script de população inicial
-├── stored_procedures.sql # Procedures MySQL
+├── stored_procedures.sql # Views SQLite e documentação
 ├── templates/           # Templates HTML
 └── AvaliaUNB/          # Documentação e schemas
 ```
@@ -211,9 +212,288 @@ Embora não implementadas no código atual, o sistema poderia beneficiar-se de v
 - View de ranking de disciplinas
 - View de relatórios por período
 
-## 5. Views e Funcionalidades SQLite
+## 5. Stored Procedures Simuladas e Views SQLite
 
-### 5.1 Views Implementadas
+### 5.1 Implementação de Procedures no SQLite
+
+O SQLite não suporta stored procedures nativamente. Para contornar essa limitação, o sistema implementa **procedures simuladas** através da classe `ProceduresSimuladas` em Python, que combina:
+
+1. **Funções Python** que encapsulam lógica de negócio complexa
+2. **Consultas SQL otimizadas** usando views e queries diretas
+3. **Tratamento de erros** e validações centralizadas
+
+#### Arquivo: `procedures.py`
+```python
+class ProceduresSimuladas:
+    """Classe que simula stored procedures usando funções Python"""
+    
+    @staticmethod
+    def listar_professores_com_feedbacks():
+        """Simula: CALL ListarProfessoresComFeedbacks()"""
+        # Implementação com query SQL otimizada
+    
+    @staticmethod
+    def buscar_feedbacks_professor(professor_id):
+        """Simula: CALL BuscarFeedbacksProfessor(:prof_id)"""
+        # Busca feedbacks específicos com joins complexos
+```
+
+### 5.2 Procedures Implementadas
+
+#### 5.2.1 ListarProfessoresComFeedbacks()
+**Propósito**: Lista todos os professores com estatísticas agregadas de feedbacks
+```python
+@staticmethod
+def listar_professores_com_feedbacks():
+    resultado = db.session.execute(text("""
+    SELECT p.Cod_Prof as codigo_professor,
+           p.Nom_Prof as nome_professor,
+           COUNT(f.pfk_Cod_Prof) as total_feedbacks,
+           COALESCE(AVG(f.Qual), 0) as media_qualidade,
+           COALESCE(AVG(f.Nvl_Dif), 0) as media_dificuldade
+    FROM Prof p
+    LEFT JOIN Fdbk f ON p.Cod_Prof = f.pfk_Cod_Prof
+    GROUP BY p.Cod_Prof, p.Nom_Prof
+    ORDER BY p.Nom_Prof
+    """))
+    return resultado.fetchall()
+```
+
+#### 5.2.2 BuscarFeedbacksProfessor(professor_id)
+**Propósito**: Busca todos os feedbacks de um professor específico com dados relacionados
+```python
+@staticmethod
+def buscar_feedbacks_professor(professor_id):
+    resultado = db.session.execute(text("""
+    SELECT f.pfk_Num_Idf_Tur as turma_id,
+           f.pfk_Cod_Prof as professor_id,
+           f.pfk_Num_Idf_Usr as usuario_id,
+           f.Nvl_Dif as nivel_dificuldade,
+           f.Qual as qualidade,
+           f.Coment as comentario,
+           u.Nom_Usr as nome_usuario,
+           p.Nom_Prof as nome_professor,
+           d.Nom_Dis as nome_disciplina
+    FROM Fdbk f
+    JOIN Usr u ON f.pfk_Num_Idf_Usr = u.Num_Idf_Usr
+    JOIN Tur t ON f.pfk_Num_Idf_Tur = t.Num_Idf_Tur
+    JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
+    JOIN Prof p ON f.pfk_Cod_Prof = p.Cod_Prof
+    WHERE f.pfk_Cod_Prof = :prof_id
+    ORDER BY f.Qual DESC, f.Nvl_Dif ASC
+    """), {"prof_id": professor_id})
+    return resultado.fetchall()
+```
+
+#### 5.2.3 CalcularMediaProfessor(professor_id)
+**Propósito**: Calcula estatísticas específicas de um professor
+```python
+@staticmethod
+def calcular_media_professor(professor_id):
+    resultado = db.session.execute(text("""
+    SELECT AVG(f.Qual) as media_qualidade,
+           AVG(f.Nvl_Dif) as media_dificuldade,
+           COUNT(*) as total_feedbacks
+    FROM Fdbk f
+    WHERE f.pfk_Cod_Prof = :prof_id
+    """), {"prof_id": professor_id})
+    return resultado.fetchone()
+```
+
+#### 5.2.4 InserirFeedbackCompleto(dados_feedback)
+**Propósito**: Insere um novo feedback com validações completas
+```python
+@staticmethod
+def inserir_feedback_completo(dados_feedback):
+    try:
+        # Verificar se já existe feedback
+        feedback_existente = Feedback.query.filter_by(
+            pfk_numero_identificacao_turma=dados_feedback['turma_id'],
+            pfk_codigo_professor=dados_feedback['professor_id'],
+            pfk_numero_identificacao_usuario=dados_feedback['usuario_id']
+        ).first()
+        
+        if feedback_existente:
+            return {"sucesso": False, "mensagem": "Feedback já existe"}
+        
+        # Inserir novo feedback com transaction
+        novo_feedback = Feedback(...)
+        db.session.add(novo_feedback)
+        db.session.commit()
+        
+        return {"sucesso": True, "mensagem": "Feedback inserido com sucesso"}
+    except Exception as e:
+        db.session.rollback()
+        return {"sucesso": False, "mensagem": f"Erro: {str(e)}"}
+```
+
+#### 5.2.5 ObterRankingProfessores(disciplina_id=None)
+**Propósito**: Gera ranking de professores com filtro opcional por disciplina
+```python
+@staticmethod
+def obter_ranking_professores(disciplina_id=None):
+    query = """
+    SELECT p.Cod_Prof as codigo_professor,
+           p.Nom_Prof as nome_professor,
+           d.Nom_Dis as nome_disciplina,
+           AVG(f.Qual) as media_qualidade,
+           AVG(f.Nvl_Dif) as media_dificuldade,
+           COUNT(f.pfk_Cod_Prof) as total_feedbacks
+    FROM Prof p
+    JOIN Fdbk f ON p.Cod_Prof = f.pfk_Cod_Prof
+    JOIN Tur t ON f.pfk_Num_Idf_Tur = t.Num_Idf_Tur
+    JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
+    """
+    
+    if disciplina_id:
+        query += " WHERE d.Cod_Dis = :disciplina_id"
+        params = {"disciplina_id": disciplina_id}
+    else:
+        params = {}
+    
+    query += """
+    GROUP BY p.Cod_Prof, p.Nom_Prof, d.Nom_Dis
+    ORDER BY AVG(f.Qual) DESC, COUNT(f.pfk_Cod_Prof) DESC
+    """
+    
+    resultado = db.session.execute(text(query), params)
+    return resultado.fetchall()
+```
+
+#### 5.2.6 BuscarTurmasProfessor(professor_id)
+**Propósito**: Lista turmas onde um professor específico deu aula
+```python
+@staticmethod
+def buscar_turmas_professor(professor_id):
+    resultado = db.session.execute(text("""
+    SELECT DISTINCT t.Num_Idf_Tur as turma_id,
+           d.Cod_Dis as disciplina_codigo,
+           d.Nom_Dis as nome_disciplina,
+           pl.Cod_Per as periodo_codigo,
+           COUNT(f.pfk_Num_Idf_Tur) as total_feedbacks
+    FROM Tur t
+    JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
+    JOIN Per_Let pl ON t.fk_Cod_Per = pl.Cod_Per
+    LEFT JOIN Fdbk f ON t.Num_Idf_Tur = f.pfk_Num_Idf_Tur AND f.pfk_Cod_Prof = :prof_id
+    WHERE EXISTS (
+        SELECT 1 FROM Fdbk f2 
+        WHERE f2.pfk_Num_Idf_Tur = t.Num_Idf_Tur 
+        AND f2.pfk_Cod_Prof = :prof_id
+    )
+    GROUP BY t.Num_Idf_Tur, d.Cod_Dis, d.Nom_Dis, pl.Cod_Per
+    ORDER BY pl.Cod_Per DESC, d.Nom_Dis
+    """), {"prof_id": professor_id})
+    return resultado.fetchall()
+```
+
+#### 5.2.7 ObterEstatisticasSistema()
+**Propósito**: Gera estatísticas gerais do sistema
+```python
+@staticmethod
+def obter_estatisticas_sistema():
+    try:
+        # Usar SQLAlchemy ORM para estatísticas simples
+        stats = {
+            'total_professores': Professor.query.count(),
+            'total_usuarios': Usuario.query.count(),
+            'total_feedbacks': Feedback.query.count(),
+            'total_disciplinas': Disciplina.query.count(),
+            'total_turmas': Turma.query.count()
+        }
+        
+        # Buscar médias gerais com SQL direto
+        resultado_medias = db.session.execute(text("""
+        SELECT AVG(Qual) as media_geral_qualidade,
+               AVG(Nvl_Dif) as media_geral_dificuldade
+        FROM Fdbk
+        """))
+        medias = resultado_medias.fetchone()
+        
+        if medias:
+            stats['media_geral_qualidade'] = round(medias.media_geral_qualidade or 0, 2)
+            stats['media_geral_dificuldade'] = round(medias.media_geral_dificuldade or 0, 2)
+        
+        return stats
+    except Exception as e:
+        print(f"Erro ao obter estatísticas: {e}")
+        return {}
+```
+
+### 5.3 Uso das Procedures no Sistema
+
+#### Integração com Flask Routes
+```python
+from procedures import ProceduresSimuladas
+
+@app.route('/professores')
+def professores():
+    """Usa procedure simulada para listar professores"""
+    try:
+        professores_data = ProceduresSimuladas.listar_professores_com_feedbacks()
+        return render_template('professores.html', professores=professores_data)
+    except Exception as e:
+        flash(f'Erro ao buscar professores: {str(e)}', 'danger')
+        return redirect(url_for('home'))
+
+@app.route('/professor/<int:professor_id>/feedbacks')
+def feedbacks_detalhes(professor_id):
+    """Usa procedure simulada para buscar feedbacks"""
+    feedbacks_data = ProceduresSimuladas.buscar_feedbacks_professor(professor_id)
+    # Calcular estatísticas
+    if feedbacks_data:
+        total_feedbacks = len(feedbacks_data)
+        media_qualidade = sum(feedback.qualidade for feedback in feedbacks_data) / total_feedbacks
+        media_dificuldade = sum(feedback.nivel_dificuldade for feedback in feedbacks_data) / total_feedbacks
+    # ...
+```
+
+#### API Endpoints para Procedures
+```python
+@app.route('/api/procedure/ranking')
+def api_ranking_professores():
+    """API que demonstra uso de procedure simulada"""
+    try:
+        disciplina_id = request.args.get('disciplina_id')
+        ranking = ProceduresSimuladas.obter_ranking_professores(disciplina_id)
+        
+        ranking_data = [
+            {
+                "codigo_professor": r.codigo_professor,
+                "nome_professor": r.nome_professor,
+                "nome_disciplina": r.nome_disciplina,
+                "media_qualidade": round(r.media_qualidade, 2),
+                "media_dificuldade": round(r.media_dificuldade, 2),
+                "total_feedbacks": r.total_feedbacks
+            }
+            for r in ranking
+        ]
+        
+        return jsonify({"sucesso": True, "ranking": ranking_data})
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
+```
+
+### 5.4 Vantagens das Procedures Simuladas
+
+#### Benefícios Técnicos:
+1. **Encapsulamento**: Lógica complexa centralizada em uma classe
+2. **Reutilização**: Mesma procedure usada em múltiplos endpoints
+3. **Manutenibilidade**: Mudanças centralizadas em um local
+4. **Testabilidade**: Procedures podem ser testadas isoladamente
+5. **Performance**: Queries otimizadas com joins eficientes
+6. **Tratamento de Erros**: Validações e rollbacks centralizados
+
+#### Comparação com Stored Procedures Tradicionais:
+| Aspecto | Stored Procedures MySQL | Procedures Simuladas Python |
+|---------|------------------------|------------------------------|
+| **Local de Execução** | Servidor de Banco | Aplicação Python |
+| **Linguagem** | SQL/PL-SQL | Python + SQL |
+| **Debugging** | Limitado | Debugger Python completo |
+| **Versionamento** | Banco de dados | Código da aplicação |
+| **Portabilidade** | Específico do SGBD | Funciona com qualquer SGBD |
+| **Integração** | Chamadas SQL | Métodos Python nativos |
+
+### 5.5 Views SQLite Implementadas
 
 O sistema utiliza SQLite exclusivamente com views criadas para otimizar consultas frequentes:
 
@@ -393,9 +673,11 @@ def popular_banco():
 ### 10.1 Funcionalidades Implementadas
 ✅ **Camada de Persistência**: SQLAlchemy com SQLite
 ✅ **CRUD Completo**: Para 7+ tabelas relacionadas
+✅ **Stored Procedures Simuladas**: 7 procedures implementadas em Python
 ✅ **Views**: Templates HTML e views SQLite para visualização
 ✅ **Views SQLite**: Views otimizadas para consultas complexas
 ✅ **Dados Binários**: Upload e download de PDFs
+✅ **API Endpoints**: APIs que demonstram uso das procedures
 
 ### 10.2 Arquitetura Robusta
 - Separação clara de responsabilidades
