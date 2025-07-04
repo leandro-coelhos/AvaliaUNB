@@ -138,10 +138,10 @@
 
                         <div class="d-grid">
                             {% if editing %}
-                                {{ form.submit(value="Atualizar Feedback", class="btn btn-primary btn-lg") }}
+                                {{ form.enviar(value="Atualizar Feedback", class="btn btn-primary btn-lg") }}
                                 <a href="{{ url_for('meus_feedbacks') }}" class="btn btn-secondary btn-lg ms-2">Cancelar</a>
                             {% else %}
-                                {{ form.submit(class="btn btn-primary btn-lg") }}
+                                {{ form.enviar(class="btn btn-primary btn-lg") }}
                             {% endif %}
                         </div>
                     </form>
