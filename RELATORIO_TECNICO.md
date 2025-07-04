@@ -1,9 +1,10 @@
-
 # Relatório Técnico - Sistema de Avaliação de Professores (AvaliaUNB)
 
 ## Sumário Executivo
 
 O sistema AvaliaUNB é uma aplicação web desenvolvida em Flask para gerenciamento de avaliações de professores universitários. O sistema permite que alunos cadastrem feedbacks sobre professores e turmas, incluindo upload de documentos PDF relacionados às disciplinas.
+
+**Repositório GitHub**: https://github.com/leandro-coelhos/AvaliaUNB.git
 
 ## 1. Arquitetura do Sistema
 
@@ -69,7 +70,7 @@ Todos os modelos seguem o padrão SQLAlchemy com mapeamento direto para o schema
 ```python
 class Feedback(db.Model):
     __tablename__ = 'Fdbk'
-    
+
     pfk_numero_identificacao_turma = db.Column('pfk_Num_Idf_Tur', db.SmallInteger, 
                                                db.ForeignKey('Tur.Num_Idf_Tur'), primary_key=True)
     pfk_codigo_professor = db.Column('pfk_Cod_Prof', db.SmallInteger, 
@@ -160,7 +161,7 @@ def editar_feedback(turma_id, professor_id):
         pfk_codigo_professor=professor_id,
         pfk_numero_identificacao_usuario=session['usuario_id']
     ).first_or_404()
-    
+
     if formulario.validate_on_submit():
         feedback.nivel_dificuldade = formulario.dificuldade.data
         feedback.qualidade = formulario.qualidade.data
@@ -179,7 +180,7 @@ def excluir_feedback(turma_id, professor_id):
         pfk_codigo_professor=professor_id,
         pfk_numero_identificacao_usuario=session['usuario_id']
     ).first_or_404()
-    
+
     db.session.delete(feedback)
     db.session.commit()
 ```
@@ -226,12 +227,12 @@ O SQLite não suporta stored procedures nativamente. Para contornar essa limita�
 ```python
 class ProceduresSimuladas:
     """Classe que simula stored procedures usando funções Python"""
-    
+
     @staticmethod
     def listar_professores_com_feedbacks():
         """Simula: CALL ListarProfessoresComFeedbacks()"""
         # Implementação com query SQL otimizada
-    
+
     @staticmethod
     def buscar_feedbacks_professor(professor_id):
         """Simula: CALL BuscarFeedbacksProfessor(:prof_id)"""
@@ -312,15 +313,15 @@ def inserir_feedback_completo(dados_feedback):
             pfk_codigo_professor=dados_feedback['professor_id'],
             pfk_numero_identificacao_usuario=dados_feedback['usuario_id']
         ).first()
-        
+
         if feedback_existente:
             return {"sucesso": False, "mensagem": "Feedback já existe"}
-        
+
         # Inserir novo feedback com transaction
         novo_feedback = Feedback(...)
         db.session.add(novo_feedback)
         db.session.commit()
-        
+
         return {"sucesso": True, "mensagem": "Feedback inserido com sucesso"}
     except Exception as e:
         db.session.rollback()
@@ -344,18 +345,18 @@ def obter_ranking_professores(disciplina_id=None):
     JOIN Tur t ON f.pfk_Num_Idf_Tur = t.Num_Idf_Tur
     JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
     """
-    
+
     if disciplina_id:
         query += " WHERE d.Cod_Dis = :disciplina_id"
         params = {"disciplina_id": disciplina_id}
     else:
         params = {}
-    
+
     query += """
     GROUP BY p.Cod_Prof, p.Nom_Prof, d.Nom_Dis
     ORDER BY AVG(f.Qual) DESC, COUNT(f.pfk_Cod_Prof) DESC
     """
-    
+
     resultado = db.session.execute(text(query), params)
     return resultado.fetchall()
 ```
@@ -400,7 +401,7 @@ def obter_estatisticas_sistema():
             'total_disciplinas': Disciplina.query.count(),
             'total_turmas': Turma.query.count()
         }
-        
+
         # Buscar médias gerais com SQL direto
         resultado_medias = db.session.execute(text("""
         SELECT AVG(Qual) as media_geral_qualidade,
@@ -408,11 +409,11 @@ def obter_estatisticas_sistema():
         FROM Fdbk
         """))
         medias = resultado_medias.fetchone()
-        
+
         if medias:
             stats['media_geral_qualidade'] = round(medias.media_geral_qualidade or 0, 2)
             stats['media_geral_dificuldade'] = round(medias.media_geral_dificuldade or 0, 2)
-        
+
         return stats
     except Exception as e:
         print(f"Erro ao obter estatísticas: {e}")
@@ -455,7 +456,7 @@ def api_ranking_professores():
     try:
         disciplina_id = request.args.get('disciplina_id')
         ranking = ProceduresSimuladas.obter_ranking_professores(disciplina_id)
-        
+
         ranking_data = [
             {
                 "codigo_professor": r.codigo_professor,
@@ -467,7 +468,7 @@ def api_ranking_professores():
             }
             for r in ranking
         ]
-        
+
         return jsonify({"sucesso": True, "ranking": ranking_data})
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
@@ -566,7 +567,7 @@ professores = db.session.execute(text("SELECT * FROM view_professores_com_feedba
 ```python
 class DocumentoAvaliacao(db.Model):
     __tablename__ = 'Doc_Aval'
-    
+
     numero_identificacao_documento = db.Column('Num_Idf_Doc', db.Integer, primary_key=True)
     arquivo_documento = db.Column('Arq_Doc', db.LargeBinary)  # Dados binários
     nome_arquivo = db.Column('Nome_Arq', db.String(255))
@@ -660,7 +661,7 @@ def popular_banco():
     with app.app_context():
         db.drop_all()
         db.create_all()
-        
+
         # Criação de dados de exemplo
         departamentos = [
             Departamento(codigo_departamento='CIC', nome_departamento='Ciência da Computação'),
@@ -671,13 +672,13 @@ def popular_banco():
 ## 10. Conclusões
 
 ### 10.1 Funcionalidades Implementadas
-✅ **Camada de Persistência**: SQLAlchemy com SQLite
-✅ **CRUD Completo**: Para 7+ tabelas relacionadas
-✅ **Stored Procedures Simuladas**: 7 procedures implementadas em Python
-✅ **Views**: Templates HTML e views SQLite para visualização
-✅ **Views SQLite**: Views otimizadas para consultas complexas
-✅ **Dados Binários**: Upload e download de PDFs
-✅ **API Endpoints**: APIs que demonstram uso das procedures
+**Camada de Persistência**: SQLAlchemy com SQLite
+**CRUD Completo**: Para 7+ tabelas relacionadas
+**Stored Procedures Simuladas**: 7 procedures implementadas em Python
+**Views**: Templates HTML e views SQLite para visualização
+**Views SQLite**: Views otimizadas para consultas complexas
+**Dados Binários**: Upload e download de PDFs
+**API Endpoints**: APIs que demonstram uso das procedures
 
 ### 10.2 Arquitetura Robusta
 - Separação clara de responsabilidades
@@ -693,302 +694,87 @@ def popular_banco():
 
 O sistema AvaliaUNB representa uma implementação completa e profissional de um sistema de avaliação acadêmica, atendendo a todos os requisitos técnicos especificados com qualidade de código empresarial.
 
-## 11. Tutorial: Executando o Projeto no VS Code
+## 11. Tutorial: Executando o Projeto no Replit
 
-### 11.1 Pré-requisitos
+### 11.1 Executando no Replit (Recomendado)
 
-#### Execução no Replit (Recomendado):
-O projeto está configurado para rodar diretamente no Replit, sem necessidade de instalação local.
+O projeto está totalmente configurado para rodar no Replit. Para executar:
 
-#### Para execução local (Opcional):
-
-##### Para Mac:
-1. **Instalar Python 3.11+**:
+1. **Abrir o Projeto**: Acesse https://github.com/leandro-coelhos/AvaliaUNB.git
+2. **Popular o Banco**: Execute o comando no Shell:
    ```bash
-   # Usando Homebrew (recomendado)
-   brew install python@3.11
-   
-   # Ou baixar do site oficial: https://www.python.org/downloads/
+   python popular_dados.py
    ```
+3. **Executar a Aplicação**: Clique no botão "Run" ou execute:
+   ```bash
+   python main.py
+   ```
+4. **Acessar**: O Replit mostrará o link da aplicação automaticamente
 
-2. **Instalar VS Code**:
-   - Baixar de: https://code.visualstudio.com/
-   - Instalar a extensão "Python" da Microsoft
+### 11.2 Dados de Login para Teste
 
-##### Para Windows:
-1. **Instalar Python 3.11+**:
-   - Baixar de: https://www.python.org/downloads/
-   - ⚠️ **IMPORTANTE**: Marcar "Add Python to PATH" durante a instalação
+Após popular o banco de dados, utilize as seguintes credenciais:
 
-2. **Instalar VS Code**:
-   - Baixar de: https://code.visualstudio.com/
-   - Instalar a extensão "Python" da Microsoft
+**Alunos**:
+- joao@gmail.com / 123456
+- maria@gmail.com / 123456
+- carlos@gmail.com / 123456
+- ana@gmail.com / 123456
 
-### 11.2 Clonando o Projeto
+**Administrador**:
+- admin@unb.br / admin123
 
-#### Opção 1: Download Direto do Replit
-1. No Replit, clicar em "Download as ZIP"
-2. Extrair o arquivo ZIP em uma pasta de sua escolha
-3. Abrir o VS Code na pasta extraída
+### 11.3 Funcionalidades Principais
 
-#### Opção 2: Via Git (se o projeto estiver no GitHub)
+1. **Login/Cadastro**: Sistema de autenticação completo
+2. **Visualizar Professores**: Lista com estatísticas de feedbacks
+3. **Dar Feedback**: Formulário com upload de documentos PDF
+4. **Visualizar Disciplinas**: Listagem organizada por departamento
+5. **Estatísticas**: Dashboard com dados agregados do sistema
+6. **Meus Feedbacks**: Área pessoal para editar/excluir feedbacks
+
+### 11.4 Estrutura de URLs
+
+- `/` - Página inicial
+- `/login` - Login de usuários
+- `/cadastro` - Cadastro de novos usuários
+- `/professores` - Lista de professores
+- `/disciplinas` - Lista de disciplinas
+- `/feedback` - Formulário de feedback
+- `/meus-feedbacks` - Feedbacks do usuário logado
+- `/estatisticas` - Dashboard de estatísticas
+- `/professor/<id>/feedbacks` - Detalhes de feedbacks por professor
+
+### 11.5 Características Técnicas do Deployment
+
+- **Banco**: SQLite com dados persistidos no Replit
+- **Upload**: Documentos PDF armazenados como BLOB
+- **Performance**: Views otimizadas para consultas complexas
+- **Segurança**: Senhas hasheadas e validação de sessões
+- **Responsividade**: Interface adaptável para dispositivos móveis
+
+### 11.6 Troubleshooting no Replit
+
+**Problema**: "Port already in use"
+**Solução**: O Replit pode estar executando o processo anterior. Pare todos os processos e execute novamente.
+
+**Problema**: Banco não encontrado
+**Solução**: Execute `python popular_dados.py` para recriar o banco com dados de teste.
+
+**Problema**: Erro de importação
+**Solução**: O Replit instala dependências automaticamente baseado no `requirements.txt`.
+
+### 11.7 Comandos Úteis no Replit Shell
+
 ```bash
-# Mac/Windows (no Terminal/Command Prompt)
-git clone https://github.com/seu-usuario/AvaliaUNB.git
-cd AvaliaUNB
-code .
-```
-
-### 11.3 Configuração do Ambiente
-
-#### Passo 1: Abrir o Terminal no VS Code
-- **Mac**: `Cmd + Shift + `` ` `` ou Terminal > New Terminal
-- **Windows**: `Ctrl + Shift + `` ` `` ou Terminal > New Terminal
-
-#### Passo 2: Verificar Python
-```bash
-# Mac/Windows
-python --version
-# ou
-python3 --version
-
-# Deve retornar Python 3.11+ 
-```
-
-#### Passo 3: Instalar Dependências
-```bash
-# Mac/Windows
-pip install Flask==2.3.3
-pip install Flask-SQLAlchemy==3.0.5
-pip install Flask-WTF==1.1.1
-pip install WTForms==3.0.1
-pip install Werkzeug==2.3.7
-pip install email-validator==2.2.0
-pip install PyMySQL
-
-# Ou instalar tudo de uma vez:
-pip install -r requirements.txt
-```
-
-### 11.4 Configuração do Banco de Dados
-
-#### Opção 1: SQLite (Mais Simples - Recomendado para teste)
-1. O projeto já está configurado para SQLite por padrão
-2. O banco será criado automaticamente na primeira execução
-
-O projeto usa SQLite que é criado automaticamente - não requer configuração adicional de banco de dados.
-
-### 11.5 Executando o Projeto
-
-#### Passo 1: Popular o Banco de Dados
-```bash
-# Mac/Windows (no terminal do VS Code)
-python popular_dados.py
-```
-
-#### Passo 2: Executar a Aplicação
-```bash
-# Mac/Windows
-python main.py
-```
-
-#### Passo 3: Acessar no Navegador
-- Abrir: http://127.0.0.1:5000 ou http://localhost:5000
-
-### 11.6 Configuração do VS Code
-
-#### Configurar o Debugger
-1. Criar arquivo `.vscode/launch.json`:
-```json
-{
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Python: Flask",
-            "type": "python",
-            "request": "launch",
-            "program": "${workspaceFolder}/main.py",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "env": {
-                "FLASK_ENV": "development",
-                "FLASK_DEBUG": "1"
-            }
-        }
-    ]
-}
-```
-
-2. **Executar com Debug**: Pressionar `F5` ou ir em Run > Start Debugging
-
-#### Configurar Tarefas
-1. Criar arquivo `.vscode/tasks.json`:
-```json
-{
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "Run Flask App",
-            "type": "shell",
-            "command": "python",
-            "args": ["main.py"],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Popular Banco",
-            "type": "shell",
-            "command": "python",
-            "args": ["popular_dados.py"],
-            "group": "build"
-        }
-    ]
-}
-```
-
-### 11.7 Estrutura de Arquivos no VS Code
-
-Após a configuração, seu projeto deve ter esta estrutura:
-```
-AvaliaUNB/
-├── .vscode/
-│   ├── launch.json
-│   └── tasks.json
-├── templates/
-│   ├── base.html
-│   ├── index.html
-│   └── ...
-├── instance/
-│   └── avaliacao.db
-├── main.py
-├── models.py
-├── forms.py
-├── popular_dados.py
-├── requirements.txt
-└── stored_procedures.sql
-```
-
-### 11.8 Comandos Úteis
-
-#### Para desenvolvimento:
-```bash
-# Executar com debug
-python main.py
-
 # Popular banco do zero
 python popular_dados.py
 
-# Verificar rotas
-flask routes
+# Executar aplicação
+python main.py
 
-# Abrir shell interativo
-flask shell
-```
+# Verificar estrutura do banco
+ls instance/
 
-#### Para resolução de problemas:
-```bash
-# Verificar versão Python
-python --version
-
-# Listar pacotes instalados
-pip list
-
-# Reinstalar dependências
-pip uninstall -r requirements.txt -y
-pip install -r requirements.txt
-```
-
-### 11.9 Extensões Recomendadas do VS Code
-
-1. **Python** (Microsoft) - Essencial
-2. **Pylance** (Microsoft) - Autocomplete avançado
-3. **Flask Snippets** - Snippets para Flask
-4. **SQLite Viewer** - Visualizar banco SQLite
-5. **HTML CSS Support** - Suporte aprimorado para templates
-6. **Jinja** - Syntax highlighting para templates Jinja2
-
-### 11.10 Troubleshooting
-
-#### Problemas Comuns:
-
-**1. "python command not found"**
-- **Mac**: Usar `python3` em vez de `python`
-- **Windows**: Reinstalar Python marcando "Add to PATH"
-
-**2. "Module not found"**
-```bash
-# Reinstalar dependências
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-**3. "Permission denied" (Mac)**
-```bash
-# Usar sudo ou pip --user
-pip install --user -r requirements.txt
-```
-
-**4. "Port already in use"**
-- Alterar porta no main.py:
-```python
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5001)
-```
-
-**5. Banco de dados não cria tabelas**
-```bash
-# Deletar banco e recriar
-rm instance/avaliacao.db
-python popular_dados.py
-```
-
-### 11.11 Diferenças entre Replit e VS Code Local
-
-| Aspecto | Replit | VS Code Local |
-|---------|---------|---------------|
-| **Instalação** | Não necessária | Python + dependências |
-| **Banco** | SQLite automático | Configuração manual |
-| **Debug** | Console web | Debugger integrado |
-| **Colaboração** | Tempo real | Via Git |
-| **Performance** | Limitada | Full local |
-| **Acesso** | Browser anywhere | Local only |
-
-### 11.12 Recomendações de Desenvolvimento
-
-1. **Use Git para versionamento**:
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-```
-
-2. **Configure .gitignore**:
-```
-__pycache__/
-*.pyc
-instance/
-.env
-*.log
-```
-
-3. **Mantenha requirements.txt atualizado**:
-```bash
-pip freeze > requirements.txt
-```
-
-4. **Use variáveis de ambiente para configurações**:
-```python
-import os
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key')
-```
-
-Com este tutorial, você consegue migrar facilmente seu projeto do Replit para um ambiente de desenvolvimento local no VS Code, mantendo todas as funcionalidades e tendo controle total sobre o ambiente de desenvolvimento.
+# Ver logs da aplicação
+python main.py 2>&1 | tee app.log
