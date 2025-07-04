@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, jsonify
 import io
 from flask_sqlalchemy import SQLAlchemy
 from forms import FormularioLogin, FormularioCadastro, FormularioFeedback
@@ -169,6 +169,29 @@ def professores_por_disciplina(codigo_disciplina):
     except Exception as e:
         flash(f'Erro ao buscar professores da disciplina: {str(e)}', 'danger')
         return redirect(url_for('disciplinas'))
+
+@app.route('/api/professores_por_turma/<int:turma_id>')
+def professores_por_turma(turma_id):
+    """Retorna os professores que dão aula em uma turma específica"""
+    try:
+        resultado = db.session.execute(text("""
+        SELECT DISTINCT p.Cod_Prof as codigo_professor,
+               p.Nom_Prof as nome_professor
+        FROM Prof p
+        JOIN Fdbk f ON p.Cod_Prof = f.pfk_Cod_Prof
+        WHERE f.pfk_Num_Idf_Tur = :turma_id
+        ORDER BY p.Nom_Prof
+        """), {"turma_id": turma_id})
+        professores = resultado.fetchall()
+        
+        professores_data = [
+            {"codigo": professor.codigo_professor, "nome": professor.nome_professor}
+            for professor in professores
+        ]
+        
+        return jsonify({"professores": professores_data})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/feedback', methods=['GET', 'POST'])
 def feedback():

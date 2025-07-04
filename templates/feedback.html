@@ -48,7 +48,7 @@
 
                         <div class="mb-3">
                             {{ form.turma.label(class="form-label") }}
-                            {{ form.turma(class="form-select" + (" is-invalid" if form.turma.errors else "")) }}
+                            {{ form.turma(class="form-select" + (" is-invalid" if form.turma.errors else ""), id="turma") }}
                             {% if form.turma.errors %}
                                 <div class="invalid-feedback">
                                     {% for error in form.turma.errors %}
@@ -60,7 +60,7 @@
 
                         <div class="mb-3">
                             {{ form.professor.label(class="form-label") }}
-                            {{ form.professor(class="form-select" + (" is-invalid" if form.professor.errors else "")) }}
+                            {{ form.professor(class="form-select" + (" is-invalid" if form.professor.errors else ""), id="professor") }}
                             {% if form.professor.errors %}
                                 <div class="invalid-feedback">
                                     {% for error in form.professor.errors %}
@@ -154,4 +154,71 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const turmaSelect = document.getElementById('turma');
+    const professorSelect = document.getElementById('professor');
+    const professorGroup = professorSelect.closest('.mb-3');
+    
+    // Armazenar as opções originais de professor
+    const professoresOriginais = Array.from(professorSelect.options);
+    
+    function atualizarProfessores() {
+        const turmaId = turmaSelect.value;
+        
+        if (!turmaId) {
+            // Se nenhuma turma selecionada, mostrar todos os professores
+            professorSelect.innerHTML = '';
+            professoresOriginais.forEach(option => {
+                professorSelect.appendChild(option.cloneNode(true));
+            });
+            return;
+        }
+        
+        // Desabilitar o select e mostrar loading
+        professorSelect.disabled = true;
+        professorSelect.innerHTML = '<option value="">Carregando professores...</option>';
+        
+        // Fazer requisição para buscar professores da turma
+        fetch(`/api/professores_por_turma/${turmaId}`)
+            .then(response => response.json())
+            .then(data => {
+                professorSelect.innerHTML = '<option value="">Selecione um professor</option>';
+                
+                if (data.error) {
+                    console.error('Erro:', data.error);
+                    professorSelect.innerHTML = '<option value="">Erro ao carregar professores</option>';
+                    return;
+                }
+                
+                if (data.professores && data.professores.length > 0) {
+                    data.professores.forEach(professor => {
+                        const option = document.createElement('option');
+                        option.value = professor.codigo;
+                        option.textContent = professor.nome;
+                        professorSelect.appendChild(option);
+                    });
+                } else {
+                    professorSelect.innerHTML = '<option value="">Nenhum professor encontrado para esta turma</option>';
+                }
+            })
+            .catch(error => {
+                console.error('Erro na requisição:', error);
+                professorSelect.innerHTML = '<option value="">Erro ao carregar professores</option>';
+            })
+            .finally(() => {
+                professorSelect.disabled = false;
+            });
+    }
+    
+    // Adicionar evento de mudança na turma
+    turmaSelect.addEventListener('change', atualizarProfessores);
+    
+    // Se já houver uma turma selecionada ao carregar a página (modo edição), atualizar professores
+    if (turmaSelect.value) {
+        atualizarProfessores();
+    }
+});
+</script>
 {% endblock %}
