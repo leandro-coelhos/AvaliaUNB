@@ -31,12 +31,22 @@
                             <div class="card h-100 shadow-sm">
                                 <div class="card-body">
                                     <h5 class="card-title text-primary">
-                                        <i class="fas fa-chalkboard-teacher"></i> {{ professor.Nom_Prof }}
+                                        <i class="fas fa-chalkboard-teacher"></i> 
+                                        {% if professor.Nom_Prof %}
+                                            {{ professor.Nom_Prof }}
+                                        {% else %}
+                                            {{ professor.nome_professor }}
+                                        {% endif %}
                                     </h5>
                                     <p class="card-text">
                                         <small class="text-muted">
                                             <i class="fas fa-id-badge"></i> 
-                                            Código: {{ professor.Cod_Prof }}
+                                            Código: 
+                                            {% if professor.Cod_Prof %}
+                                                {{ professor.Cod_Prof }}
+                                            {% else %}
+                                                {{ professor.codigo_professor }}
+                                            {% endif %}
                                         </small>
                                     </p>
                                 </div>
@@ -46,11 +56,11 @@
                                     </small>
                                 </div>
                                 <div>
-                                    <a href="{{ url_for('feedbacks_detalhes', professor_id=professor.Cod_Prof) }}" 
+                                    <a href="{{ url_for('feedbacks_detalhes', professor_id=professor.Cod_Prof if professor.Cod_Prof else professor.codigo_professor) }}" 
                                        class="btn btn-outline-primary me-2">
                                         Ver Feedbacks
                                     </a>
-                                    <a href="{{ url_for('documentos_professor', professor_id=professor.Cod_Prof) }}" 
+                                    <a href="{{ url_for('documentos_professor', professor_id=professor.Cod_Prof if professor.Cod_Prof else professor.codigo_professor) }}" 
                                        class="btn btn-outline-success">
                                         <i class="fas fa-file-pdf"></i> Documentos
                                     </a>
