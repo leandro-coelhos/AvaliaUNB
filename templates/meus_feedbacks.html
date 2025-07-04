@@ -64,7 +64,8 @@
                                         </a>
                                         <button type="button" class="btn btn-sm btn-outline-danger" 
                                                 data-bs-toggle="modal" 
-                                                data-bs-target="#deleteModal{{ turma.numero_identificacao_turma }}_{{ professor.codigo_professor }}">
+                                                data-bs-target="#deleteModal{{ turma.numero_identificacao_turma }}_{{ professor.codigo_professor }}"
+                                                aria-label="Excluir feedback">
                                             <i class="fas fa-trash"></i> Excluir
                                         </button>
                                     </div>
@@ -119,20 +120,4 @@
 </div>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Garantir que todos os modais estejam funcionando
-    var deleteButtons = document.querySelectorAll('[data-bs-toggle="modal"]');
-    deleteButtons.forEach(function(button) {
-        button.addEventListener('click', function() {
-            var targetModal = document.querySelector(button.getAttribute('data-bs-target'));
-            if (targetModal) {
-                var modal = new bootstrap.Modal(targetModal);
-                modal.show();
-            }
-        });
-    });
-});
-</script>
 {% endblock %}
