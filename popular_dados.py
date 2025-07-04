@@ -1,3 +1,4 @@
+
 from main import app, db
 from models import (Departamento, Disciplina, Professor, TipoUsuario, 
                    Usuario, PeriodoLetivo, Turma, TipoAvaliacao, 
@@ -7,9 +8,11 @@ from sqlalchemy import text
 
 def popular_banco():
     with app.app_context():
+        # Recriar todas as tabelas
         db.drop_all()
         db.create_all()
 
+        # Criar departamentos
         departamentos = [
             Departamento(codigo_departamento='CIC', nome_departamento='Ciência da Computação'),
             Departamento(codigo_departamento='MAT', nome_departamento='Matemática'),
@@ -21,6 +24,7 @@ def popular_banco():
             db.session.add(dept)
         db.session.commit()
 
+        # Criar disciplinas
         disciplinas = [
             Disciplina(codigo_disciplina='CIC0004', nome_disciplina='Algoritmos e Programação', fk_codigo_departamento='CIC'),
             Disciplina(codigo_disciplina='CIC0090', nome_disciplina='Banco de Dados', fk_codigo_departamento='CIC'),
@@ -31,8 +35,9 @@ def popular_banco():
 
         for disc in disciplinas:
             db.session.add(disc)
-        db.session.commit()ion.commit()
+        db.session.commit()
 
+        # Criar professores
         professores = [
             Professor(codigo_professor=1, nome_professor='Prof. João Silva'),
             Professor(codigo_professor=2, nome_professor='Prof. Maria Santos'),
@@ -45,6 +50,7 @@ def popular_banco():
             db.session.add(prof)
         db.session.commit()
 
+        # Criar tipos de usuário
         tipos_usuario = [
             TipoUsuario(codigo_tipo_usuario=1, nome_tipo_usuario='Aluno'),
             TipoUsuario(codigo_tipo_usuario=2, nome_tipo_usuario='Administrador'),
@@ -54,6 +60,7 @@ def popular_banco():
             db.session.add(tipo)
         db.session.commit()
 
+        # Criar períodos letivos
         periodos = [
             PeriodoLetivo(codigo_periodo='2024.1', ano_periodo=2024, sequencial_periodo=1),
             PeriodoLetivo(codigo_periodo='2024.2', ano_periodo=2024, sequencial_periodo=2),
@@ -63,8 +70,10 @@ def popular_banco():
             db.session.add(periodo)
         db.session.commit()
 
+        # Criar usuários
         usuarios = [
             Usuario(
+                numero_identificacao_usuario=1,
                 nome_usuario='João Aluno',
                 email_usuario='joao@gmail.com',
                 telefone_usuario='61999999999',
@@ -73,6 +82,7 @@ def popular_banco():
                 fk_codigo_tipo_usuario=1
             ),
             Usuario(
+                numero_identificacao_usuario=2,
                 nome_usuario='Admin Sistema',
                 email_usuario='admin@unb.br',
                 telefone_usuario='61888888888',
@@ -86,16 +96,20 @@ def popular_banco():
             db.session.add(usuario)
         db.session.commit()
 
+        # Criar turmas
         turmas = [
             Turma(numero_identificacao_turma=1, fk_codigo_disciplina='CIC0004', fk_codigo_periodo='2024.1'),
             Turma(numero_identificacao_turma=2, fk_codigo_disciplina='CIC0090', fk_codigo_periodo='2024.1'),
             Turma(numero_identificacao_turma=3, fk_codigo_disciplina='MAT0025', fk_codigo_periodo='2024.1'),
+            Turma(numero_identificacao_turma=4, fk_codigo_disciplina='FIS0001', fk_codigo_periodo='2024.2'),
+            Turma(numero_identificacao_turma=5, fk_codigo_disciplina='ENG0001', fk_codigo_periodo='2024.2'),
         ]
 
         for turma in turmas:
             db.session.add(turma)
         db.session.commit()
 
+        # Criar tipos de avaliação
         tipos_avaliacao = [
             TipoAvaliacao(codigo_tipo_avaliacao=1, nome_tipo_avaliacao='Feedback Geral'),
             TipoAvaliacao(codigo_tipo_avaliacao=2, nome_tipo_avaliacao='Avaliação Formal'),
@@ -105,94 +119,18 @@ def popular_banco():
             db.session.add(tipo_aval)
         db.session.commit()
 
+        # Criar critérios de avaliação
         criterios = [
-            CriterioAvaliacaoTurma(fk_numero_identificacao_turma=1, fk_codigo_tipo_avaliacao=1),
-            CriterioAvaliacaoTurma(fk_numero_identificacao_turma=2, fk_codigo_tipo_avaliacao=1),
-            CriterioAvaliacaoTurma(fk_numero_identificacao_turma=3, fk_codigo_tipo_avaliacao=1),
+            CriterioAvaliacaoTurma(numero_identificacao_avaliacao=1, fk_numero_identificacao_turma=1, fk_codigo_tipo_avaliacao=1),
+            CriterioAvaliacaoTurma(numero_identificacao_avaliacao=2, fk_numero_identificacao_turma=2, fk_codigo_tipo_avaliacao=1),
+            CriterioAvaliacaoTurma(numero_identificacao_avaliacao=3, fk_numero_identificacao_turma=3, fk_codigo_tipo_avaliacao=1),
         ]
 
         for criterio in criterios:
             db.session.add(criterio)
         db.session.commit()
 
-        print("Banco de dados populado com sucesso!")
-
-if __name__ == '__main__':
-    popular_banco()sion.commit()
-
-        usuarios = [
-            Usuario(
-                numero_identificacao_usuario=1,
-                nome_usuario='João Admin',
-                email_usuario='joao@admin.unb.br',
-                telefone_usuario='(61) 99999-1111',
-                matricula_usuario='admin123',
-                fk_codigo_tipo_usuario=2
-            ),
-            Usuario(
-                numero_identificacao_usuario=2,
-                nome_usuario='Maria Estudante',
-                email_usuario='maria@aluno.unb.br',
-                telefone_usuario='(61) 99999-2222',
-                matricula_usuario='22222222',
-                fk_codigo_tipo_usuario=1
-            ),
-            Usuario(
-                numero_identificacao_usuario=3,
-                nome_usuario='Pedro Estudante',
-                email_usuario='pedro@aluno.unb.br',
-                telefone_usuario='(61) 99999-3333',
-                matricula_usuario='11111111',
-                fk_codigo_tipo_usuario=1
-            ),
-        ]
-
-        for usuario in usuarios:
-            db.session.add(usuario)
-        db.session.commit()
-
-        periodos = [
-            PeriodoLetivo(codigo_periodo='2024-1', ano_periodo=2024, sequencial_periodo=1),
-            PeriodoLetivo(codigo_periodo='2024-2', ano_periodo=2024, sequencial_periodo=2),
-            PeriodoLetivo(codigo_periodo='2023-1', ano_periodo=2023, sequencial_periodo=1),
-        ]
-
-        for periodo in periodos:
-            db.session.add(periodo)
-        db.session.commit()
-
-        turmas = [
-            Turma(numero_identificacao_turma=1, fk_codigo_disciplina='CIC0004', fk_codigo_periodo='2024-1'),
-            Turma(numero_identificacao_turma=2, fk_codigo_disciplina='CIC0090', fk_codigo_periodo='2024-1'),
-            Turma(numero_identificacao_turma=3, fk_codigo_disciplina='MAT0025', fk_codigo_periodo='2024-1'),
-            Turma(numero_identificacao_turma=4, fk_codigo_disciplina='FIS0001', fk_codigo_periodo='2024-2'),
-            Turma(numero_identificacao_turma=5, fk_codigo_disciplina='ENG0001', fk_codigo_periodo='2024-2'),
-        ]
-
-        for turma in turmas:
-            db.session.add(turma)
-        db.session.commit()
-
-        tipos_avaliacao = [
-            TipoAvaliacao(codigo_tipo_avaliacao=1, nome_tipo_avaliacao='Prova'),
-            TipoAvaliacao(codigo_tipo_avaliacao=2, nome_tipo_avaliacao='Trabalho'),
-            TipoAvaliacao(codigo_tipo_avaliacao=3, nome_tipo_avaliacao='Seminário'),
-        ]
-
-        for tipo_aval in tipos_avaliacao:
-            db.session.add(tipo_aval)
-        db.session.commit()
-
-        criterios_avaliacao = [
-            CriterioAvaliacaoTurma(numero_identificacao_avaliacao=1, fk_numero_identificacao_turma=1, fk_codigo_tipo_avaliacao=1),
-            CriterioAvaliacaoTurma(numero_identificacao_avaliacao=2, fk_numero_identificacao_turma=1, fk_codigo_tipo_avaliacao=2),
-            CriterioAvaliacaoTurma(numero_identificacao_avaliacao=3, fk_numero_identificacao_turma=2, fk_codigo_tipo_avaliacao=1),
-        ]
-
-        for criterio in criterios_avaliacao:
-            db.session.add(criterio)
-        db.session.commit()
-
+        # Criar feedbacks de exemplo
         feedbacks_exemplo = [
             Feedback(
                 pfk_numero_identificacao_turma=1,
@@ -213,7 +151,7 @@ if __name__ == '__main__':
             Feedback(
                 pfk_numero_identificacao_turma=1,
                 pfk_codigo_professor=1,
-                pfk_numero_identificacao_usuario=3,
+                pfk_numero_identificacao_usuario=2,
                 nivel_dificuldade=2,
                 qualidade=3,
                 comentario='Aulas interessantes, poderia dar mais exemplos.'
@@ -224,17 +162,81 @@ if __name__ == '__main__':
             db.session.add(feedback)
         db.session.commit()
 
-        # Criar views SQLite
+        # Criar views SQLite necessárias
         try:
-            with open('stored_procedures.sql', 'r') as f:
-                sql_views = f.read()
-            db.session.execute(text(sql_views))
+            db.session.execute(text("""
+            CREATE VIEW IF NOT EXISTS view_professores_com_feedbacks AS
+            SELECT p.Cod_Prof as codigo_professor,
+                   p.Nom_Prof as nome_professor,
+                   COUNT(f.pfk_Cod_Prof) as total_feedbacks,
+                   COALESCE(AVG(f.Qual), 0) as media_qualidade,
+                   COALESCE(AVG(f.Nvl_Dif), 0) as media_dificuldade
+            FROM Prof p
+            LEFT JOIN Fdbk f ON p.Cod_Prof = f.pfk_Cod_Prof
+            GROUP BY p.Cod_Prof, p.Nom_Prof
+            ORDER BY p.Nom_Prof
+            """))
+            
+            db.session.execute(text("""
+            CREATE VIEW IF NOT EXISTS view_feedbacks_professor AS
+            SELECT f.pfk_Num_Idf_Tur as turma_id,
+                   f.pfk_Cod_Prof as professor_id,
+                   f.pfk_Num_Idf_Usr as usuario_id,
+                   f.Nvl_Dif as nivel_dificuldade,
+                   f.Qual as qualidade,
+                   f.Coment as comentario,
+                   u.Nom_Usr as nome_usuario,
+                   t.Num_Idf_Tur as numero_turma,
+                   d.Nom_Dis as nome_disciplina,
+                   p.Nom_Prof as nome_professor
+            FROM Fdbk f
+            JOIN Usr u ON f.pfk_Num_Idf_Usr = u.Num_Idf_Usr
+            JOIN Tur t ON f.pfk_Num_Idf_Tur = t.Num_Idf_Tur
+            JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
+            JOIN Prof p ON f.pfk_Cod_Prof = p.Cod_Prof
+            """))
+            
+            db.session.execute(text("""
+            CREATE VIEW IF NOT EXISTS view_medias_professor AS
+            SELECT f.pfk_Cod_Prof as professor_id,
+                   p.Nom_Prof as nome_professor,
+                   AVG(f.Qual) as media_qualidade,
+                   AVG(f.Nvl_Dif) as media_dificuldade,
+                   COUNT(*) as total_feedbacks
+            FROM Fdbk f
+            JOIN Prof p ON f.pfk_Cod_Prof = p.Cod_Prof
+            GROUP BY f.pfk_Cod_Prof, p.Nom_Prof
+            """))
+            
+            db.session.execute(text("""
+            CREATE VIEW IF NOT EXISTS view_feedbacks_turma AS
+            SELECT f.pfk_Num_Idf_Tur as turma_id,
+                   f.pfk_Cod_Prof as professor_id,
+                   f.pfk_Num_Idf_Usr as usuario_id,
+                   f.Nvl_Dif as nivel_dificuldade,
+                   f.Qual as qualidade,
+                   f.Coment as comentario,
+                   u.Nom_Usr as nome_usuario,
+                   p.Nom_Prof as nome_professor,
+                   d.Nom_Dis as nome_disciplina
+            FROM Fdbk f
+            JOIN Usr u ON f.pfk_Num_Idf_Usr = u.Num_Idf_Usr
+            JOIN Prof p ON f.pfk_Cod_Prof = p.Cod_Prof
+            JOIN Tur t ON f.pfk_Num_Idf_Tur = t.Num_Idf_Tur
+            JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
+            """))
+            
             db.session.commit()
             print("Views criadas com sucesso!")
         except Exception as e:
             print(f"Erro ao criar views: {e}")
+            db.session.rollback()
 
         print("Banco de dados populado com sucesso!")
+        print("\n=== DADOS DE LOGIN PARA TESTE ===")
+        print("Aluno: joao@gmail.com / 123456")
+        print("Admin: admin@unb.br / admin123")
+        print("==================================")
 
 if __name__ == '__main__':
     popular_banco()
