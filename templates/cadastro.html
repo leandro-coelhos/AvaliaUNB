@@ -107,39 +107,8 @@
                         </div>
 
                         <div class="d-grid">
-                            {{ form.submit(class="btn btn-success btn-lg") }}
+                            {{ form.enviar(class="btn btn-success btn-lg") }}
                         </div>
-                    </form>
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" name="email" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="telefone" class="form-label">Telefone</label>
-                            <input type="text" class="form-control" id="telefone" name="telefone" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="matricula" class="form-label">Matrícula</label>
-                            <input type="text" class="form-control" id="matricula" name="matricula" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="senha" class="form-label">Senha</label>
-                            <input type="password" class="form-control" id="senha" name="senha" required minlength="6">
-                            <div class="form-text">A senha deve ter pelo menos 6 caracteres.</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="confirmar_senha" class="form-label">Confirmar Senha</label>
-                            <input type="password" class="form-control" id="confirmar_senha" name="confirmar_senha" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="tipo_usuario" class="form-label">Tipo de Usuário</label>
-                            <select class="form-select" id="tipo_usuario" name="tipo_usuario" required>
-                                <option value="">Selecione...</option>
-                                <option value="1">Aluno</option>
-                                <option value="2">Administrador</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-success w-100">Cadastrar</button>
                     </form>
                     <hr>
                     <p class="text-center mb-0">
