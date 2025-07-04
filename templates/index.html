@@ -6,16 +6,6 @@
         <h1 class="display-4 fw-bold mb-4 animate-in">🎮 AvaliaUNB</h1>
         <p class="lead mb-5">Sistema de Avaliação de Professores da Universidade de Brasília</p>
         <p class="mb-4 animate-in" style="font-family: 'Orbitron', monospace; font-size: 1.1rem; animation-delay: 0.3s; color: var(--neon-green);">Compartilhe sua experiência acadêmica e ajude outros estudantes a fazer escolhas informadas sobre disciplinas e professores! ⚡</p>
-        {% if not session.user_id %}
-        <div class="d-flex justify-content-center gap-3">
-            <a href="{{ url_for('login') }}" class="btn btn-light btn-lg px-4">
-                LOGIN
-            </a>
-            <a href="{{ url_for('cadastro') }}" class="btn btn-outline-light btn-lg px-4">
-                CADASTRAR
-            </a>
-        </div>
-        {% endif %}
     </div>
 </section>
 
