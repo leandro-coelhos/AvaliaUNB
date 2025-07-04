@@ -77,33 +77,285 @@
                                 </div>
                             </div>
                         </div>
+                    {% endfor %}
+                </div>
 
-                        <!-- Modal de confirmação para excluir -->
-                        <div class="modal fade" id="deleteModal{{ turma.numero_identificacao_turma }}_{{ professor.codigo_professor }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ turma.numero_identificacao_turma }}_{{ professor.codigo_professor }}" aria-hidden="true">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="deleteModalLabel{{ turma.numero_identificacao_turma }}_{{ professor.codigo_professor }}">Confirmar Exclusão</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <!-- Modal de confirmação para excluir -->
+                <div class="modal fade" id="deleteModal{{ turma.numero_identificacao_turma }}_{{ professor.codigo_professor }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ turma.numero_identificacao_turma }}_{{ professor.codigo_professor }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="deleteModalLabel{{ turma.numero_identificacao_turma }}_{{ professor.codigo_professor }}">Confirmar Exclusão</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Tem certeza que deseja excluir seu feedback para:</p>
+                                <strong>{{ disciplina.nome_disciplina }} - Turma {{ turma.numero_identificacao_turma }}</strong><br>
+                                <strong>Professor: {{ professor.nome_professor }}</strong>
+                                <p class="text-danger mt-2">Esta ação não pode ser desfeita.</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <form method="POST" action="{{ url_for('excluir_feedback', turma_id=turma.numero_identificacao_turma, professor_id=professor.codigo_professor) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="fas fa-trash"></i> Excluir Feedback
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">Você ainda não enviou nenhum feedback</h4>
+                    <p class="text-muted">Compartilhe sua experiência com as turmas que você cursou!</p>
+                    <a href="{{ url_for('feedback') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Criar Primeiro Feedback
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
+```
+
+```html
+{% extends "base.html" %}
+
+{% block title %}Meus Feedbacks - AvaliaUNB{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold">Meus Feedbacks</h2>
+                <a href="{{ url_for('feedback') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Novo Feedback
+                </a>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% if feedbacks %}
+                <div class="row">
+                    {% for feedback, turma, professor, disciplina in feedbacks %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title text-primary">{{ disciplina.nome_disciplina }}</h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">Turma {{ turma.numero_identificacao_turma }}</h6>
+                                    <p class="card-text">
+                                        <strong>Professor:</strong> {{ professor.nome_professor }}<br>
+                                        <strong>Comentário:</strong> {{ feedback.comentario }}<br>
+                                    </p>
+                                    {% set documento = feedback.documentos|first %}
+                                    {% if documento %}
+                                        <div class="mt-2">
+                                            <small class="text-neon-pink">
+                                                <i class="fas fa-file-pdf"></i> 
+                                                Documento anexado: 
+                                                <a href="{{ url_for('baixar_documento', documento_id=documento.id) }}" 
+                                                   class="text-neon-cyan" target="_blank">
+                                                    {{ documento.nome_arquivo }}
+                                                </a>
+                                            </small>
+                                        </div>
+                                    {% endif %}
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-star"></i> Qualidade: {{ feedback.qualidade }}/5
+                                        </span>
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-chart-line"></i> Dificuldade: {{ feedback.nivel_dificuldade }}/5
+                                        </span>
                                     </div>
-                                    <div class="modal-body">
-                                        <p>Tem certeza que deseja excluir seu feedback para:</p>
-                                        <strong>{{ disciplina.nome_disciplina }} - Turma {{ turma.numero_identificacao_turma }}</strong><br>
-                                        <strong>Professor: {{ professor.nome_professor }}</strong>
-                                        <p class="text-danger mt-2">Esta ação não pode ser desfeita.</p>
+                                    <div class="d-flex gap-2">
+                                        <a href="{{ url_for('editar_feedback', turma_id=turma.numero_identificacao_turma, professor_id=professor.codigo_professor) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#deleteModal{{ turma.numero_identificacao_turma }}_{{ professor.codigo_professor }}"
+                                                aria-label="Excluir feedback">
+                                            <i class="fas fa-trash"></i> Excluir
+                                        </button>
                                     </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                        <form method="POST" action="{{ url_for('excluir_feedback', turma_id=turma.numero_identificacao_turma, professor_id=professor.codigo_professor) }}" style="display: inline;">
-                                            <button type="submit" class="btn btn-danger">
-                                                <i class="fas fa-trash"></i> Excluir Feedback
-                                            </button>
-                                        </form>
-                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <small class="text-muted">
+                                        <i class="fas fa-check-circle text-success"></i> Feedback enviado
+                                    </small>
                                 </div>
                             </div>
                         </div>
                     {% endfor %}
+                    <!-- Modal de confirmação para excluir -->
+                    <div class="modal fade" id="deleteModal{{ turma.numero_identificacao_turma }}_{{ professor.codigo_professor }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ turma.numero_identificacao_turma }}_{{ professor.codigo_professor }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="deleteModalLabel{{ turma.numero_identificacao_turma }}_{{ professor.codigo_professor }}">Confirmar Exclusão</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>Tem certeza que deseja excluir seu feedback para:</p>
+                                    <strong>{{ disciplina.nome_disciplina }} - Turma {{ turma.numero_identificacao_turma }}</strong><br>
+                                    <strong>Professor: {{ professor.nome_professor }}</strong>
+                                    <p class="text-danger mt-2">Esta ação não pode ser desfeita.</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <form method="POST" action="{{ url_for('excluir_feedback', turma_id=turma.numero_identificacao_turma, professor_id=professor.codigo_professor) }}" style="display: inline;">
+                                        <button type="submit" class="btn btn-danger">
+                                            <i class="fas fa-trash"></i> Excluir Feedback
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">Você ainda não enviou nenhum feedback</h4>
+                    <p class="text-muted">Compartilhe sua experiência com as turmas que você cursou!</p>
+                    <a href="{{ url_for('feedback') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Criar Primeiro Feedback
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
+```
+
+```html
+{% extends "base.html" %}
+
+{% block title %}Meus Feedbacks - AvaliaUNB{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold">Meus Feedbacks</h2>
+                <a href="{{ url_for('feedback') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Novo Feedback
+                </a>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% if feedbacks %}
+                <div class="row">
+                    {% for feedback, turma, professor, disciplina in feedbacks %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title text-primary">{{ disciplina.nome_disciplina }}</h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">Turma {{ turma.numero_identificacao_turma }}</h6>
+                                    <p class="card-text">
+                                        <strong>Professor:</strong> {{ professor.nome_professor }}<br>
+                                        <strong>Comentário:</strong> {{ feedback.comentario }}<br>
+                                    </p>
+                                    {% set documento = feedback.documentos|first %}
+                                    {% if documento %}
+                                        <div class="mt-2">
+                                            <small class="text-neon-pink">
+                                                <i class="fas fa-file-pdf"></i> 
+                                                Documento anexado: 
+                                                <a href="{{ url_for('baixar_documento', documento_id=documento.id) }}" 
+                                                   class="text-neon-cyan" target="_blank">
+                                                    {{ documento.nome_arquivo }}
+                                                </a>
+                                            </small>
+                                        </div>
+                                    {% endif %}
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-star"></i> Qualidade: {{ feedback.qualidade }}/5
+                                        </span>
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-chart-line"></i> Dificuldade: {{ feedback.nivel_dificuldade }}/5
+                                        </span>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <a href="{{ url_for('editar_feedback', turma_id=turma.numero_identificacao_turma, professor_id=professor.codigo_professor) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#deleteModal{{ turma.numero_identificacao_turma }}_{{ professor.codigo_professor }}"
+                                                aria-label="Excluir feedback">
+                                            <i class="fas fa-trash"></i> Excluir
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <small class="text-muted">
+                                        <i class="fas fa-check-circle text-success"></i> Feedback enviado
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+
+                    {% endfor %}
+                      <!-- Modal de confirmação para excluir -->
+                    <div class="modal fade" id="deleteModal{{ turma.numero_identificacao_turma }}_{{ professor.codigo_professor }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ turma.numero_identificacao_turma }}_{{ professor.codigo_professor }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="deleteModalLabel{{ turma.numero_identificacao_turma }}_{{ professor.codigo_professor }}">Confirmar Exclusão</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>Tem certeza que deseja excluir seu feedback para:</p>
+                                    <strong>{{ disciplina.nome_disciplina }} - Turma {{ turma.numero_identificacao_turma }}</strong><br>
+                                    <strong>Professor: {{ professor.nome_professor }}</strong>
+                                    <p class="text-danger mt-2">Esta ação não pode ser desfeita.</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <form method="POST" action="{{ url_for('excluir_feedback', turma_id=turma.numero_identificacao_turma, professor_id=professor.codigo_professor) }}" style="display: inline;">
+                                        <button type="submit" class="btn btn-danger">
+                                            <i class="fas fa-trash"></i> Excluir Feedback
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             {% else %}
                 <div class="text-center py-5">
