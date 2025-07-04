@@ -348,7 +348,7 @@ def feedbacks_detalhes(professor_id):
                              total_feedbacks=total_feedbacks)
     except Exception as e:
         flash(f'Erro ao buscar feedbacks: {str(e)}', 'danger')
-        return redirect(url_for('professores'))
+        return redirect(url_for('disciplinas'))
 
 @app.route('/turmas_avaliadas')
 def turmas_avaliadas():
