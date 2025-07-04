@@ -1,0 +1,127 @@
+
+{% extends "base.html" %}
+
+{% block title %}Documentos - Turma {{ turma.numero_identificacao_turma }} - AvaliaUNB{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold">Documentos da Turma {{ turma.numero_identificacao_turma }}</h2>
+                    <h5 class="text-muted">Disciplina: {{ turma.disciplina.nome_disciplina }}</h5>
+                    <p class="text-muted">Período: {{ turma.periodo.codigo_periodo }}</p>
+                </div>
+                <a href="{{ url_for('turmas_avaliadas') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left"></i> Voltar às Turmas
+                </a>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% if documentos %}
+                <div class="row">
+                    {% for documento in documentos %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-file-pdf text-danger me-2"></i>
+                                        {{ documento.nome_arquivo }}
+                                    </h5>
+                                    <p class="card-text">
+                                        <strong>Tipo:</strong> 
+                                        <span class="badge bg-secondary">
+                                            {% if documento.tipo_documento == 'prova' %}
+                                                <i class="fas fa-clipboard-list"></i> Prova
+                                            {% elif documento.tipo_documento == 'plano_ensino' %}
+                                                <i class="fas fa-book"></i> Plano de Ensino
+                                            {% elif documento.tipo_documento == 'slide' %}
+                                                <i class="fas fa-presentation"></i> Slide/Apresentação
+                                            {% elif documento.tipo_documento == 'material_apoio' %}
+                                                <i class="fas fa-file-alt"></i> Material de Apoio
+                                            {% else %}
+                                                <i class="fas fa-file"></i> Outro
+                                            {% endif %}
+                                        </span>
+                                    </p>
+                                    <p class="card-text text-muted">
+                                        <small>ID do Documento: {{ documento.numero_identificacao_documento }}</small>
+                                    </p>
+                                </div>
+                                <div class="card-footer">
+                                    <a href="{{ url_for('baixar_documento', documento_id=documento.numero_identificacao_documento) }}" 
+                                       class="btn btn-primary w-100">
+                                        <i class="fas fa-download"></i> Baixar Documento
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Estatísticas dos documentos -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">Estatísticas dos Documentos</h6>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <h4 class="text-primary">{{ documentos|length }}</h4>
+                                            <small class="text-muted">Total de Documentos</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <h4 class="text-success">{{ documentos|selectattr('tipo_documento', 'equalto', 'prova')|list|length }}</h4>
+                                            <small class="text-muted">Provas</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <h4 class="text-info">{{ documentos|selectattr('tipo_documento', 'equalto', 'plano_ensino')|list|length }}</h4>
+                                            <small class="text-muted">Planos de Ensino</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <h4 class="text-warning">{{ documentos|selectattr('tipo_documento', 'equalto', 'slide')|list|length }}</h4>
+                                            <small class="text-muted">Slides</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-file-excel fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">Nenhum documento encontrado</h4>
+                    <p class="text-muted">Esta turma ainda não possui documentos anexados nos feedbacks.</p>
+                    <div class="mt-4">
+                        <a href="{{ url_for('feedback') }}" class="btn btn-primary me-2">
+                            <i class="fas fa-plus"></i> Dar Feedback com Documento
+                        </a>
+                        <a href="{{ url_for('feedbacks_turma', turma_id=turma.numero_identificacao_turma) }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-comments"></i> Ver Feedbacks da Turma
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

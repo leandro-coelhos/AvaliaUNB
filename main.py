@@ -350,6 +350,20 @@ def feedbacks_turma(turma_id):
         flash(f'Erro ao buscar feedbacks da turma: {str(e)}', 'danger')
         return redirect(url_for('turmas_avaliadas'))
 
+@app.route('/turma/<int:turma_id>/documentos')
+def documentos_turma(turma_id):
+    turma = Turma.query.get_or_404(turma_id)
+    
+    # Buscar documentos relacionados à turma
+    documentos = db.session.query(DocumentoAvaliacao).join(
+        CriterioAvaliacaoTurma,
+        DocumentoAvaliacao.fk_numero_identificacao_avaliacao == CriterioAvaliacaoTurma.numero_identificacao_avaliacao
+    ).filter(
+        CriterioAvaliacaoTurma.fk_numero_identificacao_turma == turma_id
+    ).all()
+    
+    return render_template('documentos_turma.html', turma=turma, documentos=documentos)
+
 @app.route('/documento/<int:documento_id>')
 def baixar_documento(documento_id):
     documento = DocumentoAvaliacao.query.get_or_404(documento_id)
