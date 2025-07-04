@@ -32,19 +32,19 @@
                             <div class="card h-100 shadow-sm">
                                 <div class="card-body">
                                     <h5 class="card-title text-success">
-                                        <i class="fas fa-book"></i> {{ disciplina.Nom_Dis }}
+                                        <i class="fas fa-book"></i> {{ disciplina.nome_disciplina }}
                                     </h5>
                                     <p class="card-text">
                                         <small class="text-muted">
                                             <i class="fas fa-code"></i> 
-                                            Código: {{ disciplina.Cod_Dis }}
+                                            Código: {{ disciplina.codigo_disciplina }}
                                         </small>
                                     </p>
                                     {% if disciplina.departamento %}
                                         <p class="card-text">
                                             <small class="text-info">
                                                 <i class="fas fa-building"></i>
-                                                Departamento: {{ disciplina.departamento.Nom_Dep }}
+                                                Departamento: {{ disciplina.departamento.nome_departamento }}
                                             </small>
                                         </p>
                                     {% endif %}
