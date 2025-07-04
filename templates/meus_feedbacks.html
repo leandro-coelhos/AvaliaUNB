@@ -78,12 +78,12 @@
                         </div>
 
                         <!-- Modal de confirmação para excluir -->
-                        <div class="modal fade" id="deleteModal{{ turma.numero_identificacao_turma }}_{{ professor.codigo_professor }}" tabindex="-1">
+                        <div class="modal fade" id="deleteModal{{ turma.numero_identificacao_turma }}_{{ professor.codigo_professor }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ turma.numero_identificacao_turma }}_{{ professor.codigo_professor }}" aria-hidden="true">
                             <div class="modal-dialog">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title">Confirmar Exclusão</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        <h5 class="modal-title" id="deleteModalLabel{{ turma.numero_identificacao_turma }}_{{ professor.codigo_professor }}">Confirmar Exclusão</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                     </div>
                                     <div class="modal-body">
                                         <p>Tem certeza que deseja excluir seu feedback para:</p>
@@ -100,8 +100,6 @@
                                         </form>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
                             </div>
                         </div>
                     {% endfor %}
@@ -121,4 +119,20 @@
 </div>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Garantir que todos os modais estejam funcionando
+    var deleteButtons = document.querySelectorAll('[data-bs-toggle="modal"]');
+    deleteButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            var targetModal = document.querySelector(button.getAttribute('data-bs-target'));
+            if (targetModal) {
+                var modal = new bootstrap.Modal(targetModal);
+                modal.show();
+            }
+        });
+    });
+});
+</script>
 {% endblock %}
