@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
 import io
 from flask_sqlalchemy import SQLAlchemy
@@ -44,7 +43,7 @@ def cadastro():
             (Usuario.email_usuario == formulario.email.data) |
             (Usuario.matricula_usuario == formulario.matricula.data)
         ).first()
-        
+
         if usuario_existente:
             flash('Email ou matrícula já cadastrados!', 'danger')
         else:
@@ -89,18 +88,18 @@ def feedback():
     if 'usuario_id' not in session:
         flash('Você precisa estar logado para dar feedback!', 'warning')
         return redirect(url_for('login'))
-    
+
     formulario = FormularioFeedback()
     formulario.professor.choices = [(p.codigo_professor, p.nome_professor) for p in Professor.query.all()]
     formulario.turma.choices = [(t.numero_identificacao_turma, f"Turma {t.numero_identificacao_turma} - {t.disciplina.nome_disciplina}") for t in Turma.query.all()]
-    
+
     if formulario.validate_on_submit():
         feedback_existente = Feedback.query.filter_by(
             pfk_numero_identificacao_turma=formulario.turma.data,
             pfk_codigo_professor=formulario.professor.data,
             pfk_numero_identificacao_usuario=session['usuario_id']
         ).first()
-        
+
         if feedback_existente:
             flash('Você já avaliou este professor nesta turma!', 'warning')
         else:
@@ -114,12 +113,12 @@ def feedback():
             )
             db.session.add(novo_feedback)
             db.session.flush()
-            
+
             if formulario.arquivo_pdf.data and formulario.tipo_documento.data:
                 criterio = CriterioAvaliacaoTurma.query.filter_by(
                     fk_numero_identificacao_turma=formulario.turma.data
                 ).first()
-                
+
                 if not criterio:
                     criterio = CriterioAvaliacaoTurma(
                         fk_numero_identificacao_turma=formulario.turma.data,
@@ -127,7 +126,7 @@ def feedback():
                     )
                     db.session.add(criterio)
                     db.session.flush()
-                
+
                 arquivo = formulario.arquivo_pdf.data
                 documento = DocumentoAvaliacao(
                     nome_arquivo=arquivo.filename,
@@ -136,11 +135,11 @@ def feedback():
                     fk_numero_identificacao_avaliacao=criterio.numero_identificacao_avaliacao
                 )
                 db.session.add(documento)
-            
+
             db.session.commit()
             flash('Feedback enviado com sucesso!', 'success')
             return redirect(url_for('home'))
-    
+
     return render_template('feedback.html', form=formulario)
 
 @app.route('/meus_feedbacks')
@@ -148,7 +147,7 @@ def meus_feedbacks():
     if 'usuario_id' not in session:
         flash('Você precisa estar logado!', 'warning')
         return redirect(url_for('login'))
-    
+
     feedbacks_usuario = Feedback.query.filter_by(pfk_numero_identificacao_usuario=session['usuario_id']).all()
     return render_template('meus_feedbacks.html', feedbacks=feedbacks_usuario)
 
@@ -157,32 +156,32 @@ def editar_feedback(turma_id, professor_id):
     if 'usuario_id' not in session:
         flash('Você precisa estar logado!', 'warning')
         return redirect(url_for('login'))
-    
+
     feedback = Feedback.query.filter_by(
         pfk_numero_identificacao_turma=turma_id,
         pfk_codigo_professor=professor_id,
         pfk_numero_identificacao_usuario=session['usuario_id']
     ).first_or_404()
-    
+
     formulario = FormularioFeedback()
     formulario.professor.choices = [(p.codigo_professor, p.nome_professor) for p in Professor.query.all()]
     formulario.turma.choices = [(t.numero_identificacao_turma, f"Turma {t.numero_identificacao_turma} - {t.disciplina.nome_disciplina}") for t in Turma.query.all()]
-    
+
     if formulario.validate_on_submit():
         feedback.nivel_dificuldade = formulario.dificuldade.data
         feedback.qualidade = formulario.qualidade.data
         feedback.comentario = formulario.comentario.data
-        
+
         if formulario.arquivo_pdf.data and formulario.tipo_documento.data:
             criterio = CriterioAvaliacaoTurma.query.filter_by(
                 fk_numero_identificacao_turma=turma_id
             ).first()
-            
+
             if criterio:
                 DocumentoAvaliacao.query.filter_by(
                     fk_numero_identificacao_avaliacao=criterio.numero_identificacao_avaliacao
                 ).delete()
-            
+
             arquivo = formulario.arquivo_pdf.data
             documento = DocumentoAvaliacao(
                 nome_arquivo=arquivo.filename,
@@ -191,18 +190,18 @@ def editar_feedback(turma_id, professor_id):
                 fk_numero_identificacao_avaliacao=criterio.numero_identificacao_avaliacao
             )
             db.session.add(documento)
-        
+
         db.session.commit()
         flash('Feedback atualizado com sucesso!', 'success')
         return redirect(url_for('meus_feedbacks'))
-    
+
     if request.method == 'GET':
         formulario.professor.data = feedback.pfk_codigo_professor
         formulario.turma.data = feedback.pfk_numero_identificacao_turma
         formulario.dificuldade.data = feedback.nivel_dificuldade
         formulario.qualidade.data = feedback.qualidade
         formulario.comentario.data = feedback.comentario
-    
+
     return render_template('feedback.html', form=formulario, editing=True)
 
 @app.route('/feedback/excluir/<int:turma_id>/<int:professor_id>', methods=['POST'])
@@ -210,13 +209,13 @@ def excluir_feedback(turma_id, professor_id):
     if 'usuario_id' not in session:
         flash('Você precisa estar logado!', 'warning')
         return redirect(url_for('login'))
-    
+
     feedback = Feedback.query.filter_by(
         pfk_numero_identificacao_turma=turma_id,
         pfk_codigo_professor=professor_id,
         pfk_numero_identificacao_usuario=session['usuario_id']
     ).first_or_404()
-    
+
     db.session.delete(feedback)
     db.session.commit()
     flash('Feedback excluído com sucesso!', 'success')
@@ -225,21 +224,21 @@ def excluir_feedback(turma_id, professor_id):
 @app.route('/professor/<int:professor_id>/feedbacks')
 def feedbacks_detalhes(professor_id):
     professor = Professor.query.get_or_404(professor_id)
-    
+
     try:
         resultado_feedbacks = db.session.execute(text("CALL BuscarFeedbacksProfessor(:prof_id)"), {"prof_id": professor_id})
         feedbacks_data = resultado_feedbacks.fetchall()
-        
+
         resultado_medias = db.session.execute(text("CALL CalcularMediasProfessor(:prof_id)"), {"prof_id": professor_id})
         medias_data = resultado_medias.fetchone()
-        
+
         if medias_data:
             media_qualidade = round(float(medias_data.media_qualidade), 1)
             media_dificuldade = round(float(medias_data.media_dificuldade), 1)
         else:
             media_qualidade = 0
             media_dificuldade = 0
-        
+
         return render_template('feedbacks_detalhes.html', 
                              professor=professor, 
                              feedbacks=feedbacks_data,
@@ -257,11 +256,11 @@ def turmas_avaliadas():
 @app.route('/turma/<int:turma_id>/feedbacks')
 def feedbacks_turma(turma_id):
     turma = Turma.query.get_or_404(turma_id)
-    
+
     try:
         resultado = db.session.execute(text("CALL BuscarFeedbacksPorTurma(:turma_id)"), {"turma_id": turma_id})
         feedbacks_data = resultado.fetchall()
-        
+
         return render_template('feedbacks_turma.html', 
                              turma=turma, 
                              feedbacks=feedbacks_data)
@@ -299,3 +298,55 @@ def documentos_professor(professor_id):
         (Feedback.pfk_codigo_professor == professor_id)
     ).all()
     return render_template('documentos_professor.html', professor=professor, documentos=documentos)
+
+class Usuario(db.Model):
+    __tablename__ = 'Usr'
+
+    numero_identificacao_usuario = db.Column('Num_Idf_Usr', db.Integer, primary_key=True)
+    nome_usuario = db.Column('Nom_Usr', db.String(25))
+    email_usuario = db.Column('Email_Usr', db.String(35))
+    telefone_usuario = db.Column('Tel_Usr', db.String(20))
+    matricula_usuario = db.Column('Mat_Usr', db.String(20))
+    senha_usuario = db.Column('Senha_Usr', db.String(255))
+    fk_codigo_tipo_usuario = db.Column('fk_Cod_Tp_Usr', db.SmallInteger, db.ForeignKey('Tp_Usr.Cod_Tp_Usr'), nullable=False)
+
+    feedbacks = db.relationship('Feedback', backref='usuario', lazy=True)
+
+class Usuario(db.Model):
+    __tablename__ = 'Usr'
+
+    numero_identificacao_usuario = db.Column('Num_Idf_Usr', db.Integer, primary_key=True)
+    nome_usuario = db.Column('Nom_Usr', db.String(25))
+    email_usuario = db.Column('Email_Usr', db.String(35))
+    telefone_usuario = db.Column('Tel_Usr', db.String(20))
+    matricula_usuario = db.Column('Mat_Usr', db.String(20))
+    senha_usuario = db.Column('Senha_Usr', db.String(255))
+    fk_codigo_tipo_usuario = db.Column('fk_Cod_Tp_Usr', db.SmallInteger, db.ForeignKey('Tp_Usr.Cod_Tp_Usr'), nullable=False)
+
+    feedbacks = db.relationship('Feedback', backref='usuario', lazy=True)
+
+class Usuario(db.Model):
+    __tablename__ = 'Usr'
+
+    numero_identificacao_usuario = db.Column('Num_Idf_Usr', db.Integer, primary_key=True)
+    nome_usuario = db.Column('Nom_Usr', db.String(25))
+    email_usuario = db.Column('Email_Usr', db.String(35))
+    telefone_usuario = db.Column('Tel_Usr', db.String(20))
+    matricula_usuario = db.Column('Mat_Usr', db.String(20))
+    senha_usuario = db.Column('Senha_Usr', db.String(255))
+    fk_codigo_tipo_usuario = db.Column('fk_Cod_Tp_Usr', db.SmallInteger, db.ForeignKey('Tp_Usr.Cod_Tp_Usr'), nullable=False)
+
+    feedbacks = db.relationship('Feedback', backref='usuario', lazy=True)
+
+class Usuario(db.Model):
+    __tablename__ = 'Usr'
+
+    numero_identificacao_usuario = db.Column('Num_Idf_Usr', db.Integer, primary_key=True)
+    nome_usuario = db.Column('Nom_Usr', db.String(25))
+    email_usuario = db.Column('Email_Usr', db.String(35))
+    telefone_usuario = db.Column('Tel_Usr', db.String(20))
+    matricula_usuario = db.Column('Mat_Usr', db.String(20))
+    senha_usuario = db.Column('Senha_Usr', db.String(255))
+    fk_codigo_tipo_usuario = db.Column('fk_Cod_Tp_Usr', db.SmallInteger, db.ForeignKey('Tp_Usr.Cod_Tp_Usr'), nullable=False)
+
+    feedbacks = db.relationship('Feedback', backref='usuario', lazy=True)

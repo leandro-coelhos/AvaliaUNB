@@ -30,7 +30,7 @@ def popular_banco():
 
         for disc in disciplinas:
             db.session.add(disc)
-        db.session.commit()
+        db.session.commit()ion.commit()
 
         professores = [
             Professor(codigo_professor=1, nome_professor='Prof. João Silva'),
@@ -52,6 +52,72 @@ def popular_banco():
         for tipo in tipos_usuario:
             db.session.add(tipo)
         db.session.commit()
+
+        periodos = [
+            PeriodoLetivo(codigo_periodo='2024.1', ano_periodo=2024, sequencial_periodo=1),
+            PeriodoLetivo(codigo_periodo='2024.2', ano_periodo=2024, sequencial_periodo=2),
+        ]
+
+        for periodo in periodos:
+            db.session.add(periodo)
+        db.session.commit()
+
+        usuarios = [
+            Usuario(
+                nome_usuario='João Aluno',
+                email_usuario='joao@gmail.com',
+                telefone_usuario='61999999999',
+                matricula_usuario='190001234',
+                senha_usuario=generate_password_hash('123456'),
+                fk_codigo_tipo_usuario=1
+            ),
+            Usuario(
+                nome_usuario='Admin Sistema',
+                email_usuario='admin@unb.br',
+                telefone_usuario='61888888888',
+                matricula_usuario='ADM001',
+                senha_usuario=generate_password_hash('admin123'),
+                fk_codigo_tipo_usuario=2
+            ),
+        ]
+
+        for usuario in usuarios:
+            db.session.add(usuario)
+        db.session.commit()
+
+        turmas = [
+            Turma(numero_identificacao_turma=1, fk_codigo_disciplina='CIC0004', fk_codigo_periodo='2024.1'),
+            Turma(numero_identificacao_turma=2, fk_codigo_disciplina='CIC0090', fk_codigo_periodo='2024.1'),
+            Turma(numero_identificacao_turma=3, fk_codigo_disciplina='MAT0025', fk_codigo_periodo='2024.1'),
+        ]
+
+        for turma in turmas:
+            db.session.add(turma)
+        db.session.commit()
+
+        tipos_avaliacao = [
+            TipoAvaliacao(codigo_tipo_avaliacao=1, nome_tipo_avaliacao='Feedback Geral'),
+            TipoAvaliacao(codigo_tipo_avaliacao=2, nome_tipo_avaliacao='Avaliação Formal'),
+        ]
+
+        for tipo_aval in tipos_avaliacao:
+            db.session.add(tipo_aval)
+        db.session.commit()
+
+        criterios = [
+            CriterioAvaliacaoTurma(fk_numero_identificacao_turma=1, fk_codigo_tipo_avaliacao=1),
+            CriterioAvaliacaoTurma(fk_numero_identificacao_turma=2, fk_codigo_tipo_avaliacao=1),
+            CriterioAvaliacaoTurma(fk_numero_identificacao_turma=3, fk_codigo_tipo_avaliacao=1),
+        ]
+
+        for criterio in criterios:
+            db.session.add(criterio)
+        db.session.commit()
+
+        print("Banco de dados populado com sucesso!")
+
+if __name__ == '__main__':
+    popular_banco()sion.commit()
 
         usuarios = [
             Usuario(

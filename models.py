@@ -45,6 +45,7 @@ class Usuario(db.Model):
     email_usuario = db.Column('Email_Usr', db.String(35))
     telefone_usuario = db.Column('Tel_Usr', db.String(20))
     matricula_usuario = db.Column('Mat_Usr', db.String(20))
+    senha_usuario = db.Column('Senha_Usr', db.String(255))
     fk_codigo_tipo_usuario = db.Column('fk_Cod_Tp_Usr', db.SmallInteger, db.ForeignKey('Tp_Usr.Cod_Tp_Usr'), nullable=False)
     
     feedbacks = db.relationship('Feedback', backref='usuario', lazy=True)
