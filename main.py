@@ -15,7 +15,7 @@ db.init_app(app)
 
 with app.app_context():
     db.create_all()
-    
+
     # Criar views SQLite necessárias
     try:
         db.session.execute(text("""
@@ -30,7 +30,7 @@ with app.app_context():
         GROUP BY p.Cod_Prof, p.Nom_Prof
         ORDER BY p.Nom_Prof
         """))
-        
+
         db.session.execute(text("""
         CREATE VIEW IF NOT EXISTS view_feedbacks_professor AS
         SELECT f.pfk_Num_Idf_Tur as turma_id,
@@ -49,7 +49,7 @@ with app.app_context():
         JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
         JOIN Prof p ON f.pfk_Cod_Prof = p.Cod_Prof
         """))
-        
+
         db.session.execute(text("""
         CREATE VIEW IF NOT EXISTS view_medias_professor AS
         SELECT f.pfk_Cod_Prof as professor_id,
@@ -61,7 +61,7 @@ with app.app_context():
         JOIN Prof p ON f.pfk_Cod_Prof = p.Cod_Prof
         GROUP BY f.pfk_Cod_Prof, p.Nom_Prof
         """))
-        
+
         db.session.execute(text("""
         CREATE VIEW IF NOT EXISTS view_feedbacks_turma AS
         SELECT f.pfk_Num_Idf_Tur as turma_id,
@@ -79,7 +79,7 @@ with app.app_context():
         JOIN Tur t ON f.pfk_Num_Idf_Tur = t.Num_Idf_Tur
         JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
         """))
-        
+
         db.session.commit()
         print("Views criadas com sucesso!")
     except Exception as e:
@@ -145,7 +145,7 @@ def disciplinas():
 @app.route('/disciplina/<codigo_disciplina>/professores')
 def professores_por_disciplina(codigo_disciplina):
     disciplina = Disciplina.query.get_or_404(codigo_disciplina)
-    
+
     # Buscar professores que deram aula nesta disciplina
     try:
         resultado = db.session.execute(text("""
@@ -247,7 +247,7 @@ def meus_feedbacks():
     ).filter(
         Feedback.pfk_numero_identificacao_usuario == session['usuario_id']
     ).all()
-    
+
     return render_template('meus_feedbacks.html', feedbacks=feedbacks_data)
 
 @app.route('/feedback/editar/<int:turma_id>/<int:professor_id>', methods=['GET', 'POST'])
@@ -322,30 +322,46 @@ def excluir_feedback(turma_id, professor_id):
 
 @app.route('/professor/<int:professor_id>/feedbacks')
 def feedbacks_detalhes(professor_id):
-    professor = Professor.query.get_or_404(professor_id)
-
+    if 'usuario_id' not in session:
+        flash('Você precisa estar logado para ver os feedbacks!', 'warning')
+        return redirect(url_for('login'))
+    
     try:
-        resultado_feedbacks = db.session.execute(text("SELECT * FROM view_feedbacks_professor WHERE professor_id = :prof_id"), {"prof_id": professor_id})
-        feedbacks_data = resultado_feedbacks.fetchall()
+        resultado = db.session.execute(text("""
+        SELECT f.pfk_Num_Idf_Tur as turma_id,
+               f.pfk_Cod_Prof as professor_id,
+               f.pfk_Num_Idf_Usr as usuario_id,
+               f.Nvl_Dif as nivel_dificuldade,
+               f.Qual as qualidade,
+               f.Coment as comentario,
+               u.Nom_Usr as nome_usuario,
+               t.Num_Idf_Tur as numero_turma,
+               d.Nom_Dis as nome_disciplina,
+               d.Cod_Dis as disciplina_codigo,
+               p.Nom_Prof as nome_professor
+        FROM Fdbk f
+        JOIN Usr u ON f.pfk_Num_Idf_Usr = u.Num_Idf_Usr
+        JOIN Tur t ON f.pfk_Num_Idf_Tur = t.Num_Idf_Tur
+        JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
+        JOIN Prof p ON f.pfk_Cod_Prof = p.Cod_Prof
+        WHERE f.pfk_Cod_Prof = :prof_id
+        ORDER BY f.Qual DESC, f.Nvl_Dif ASC
+        """), {"prof_id": professor_id})
+        feedbacks_data = resultado.fetchall()
 
-        resultado_medias = db.session.execute(text("SELECT * FROM view_medias_professor WHERE professor_id = :prof_id"), {"prof_id": professor_id})
-        medias_data = resultado_medias.fetchone()
-
-        if medias_data:
-            media_qualidade = round(float(medias_data.media_qualidade), 1)
-            media_dificuldade = round(float(medias_data.media_dificuldade), 1)
-            total_feedbacks = medias_data.total_feedbacks
+        if feedbacks_data:
+            professor_nome = feedbacks_data[0].nome_professor
+            disciplina_codigo = feedbacks_data[0].disciplina_codigo
         else:
-            media_qualidade = 0
-            media_dificuldade = 0
-            total_feedbacks = 0
+            professor = Professor.query.get_or_404(professor_id)
+            professor_nome = professor.nome_professor
+            disciplina_codigo = 'CIC0004'  # fallback
 
         return render_template('feedbacks_detalhes.html', 
-                             professor=professor, 
-                             feedbacks=feedbacks_data,
-                             media_qualidade=media_qualidade,
-                             media_dificuldade=media_dificuldade,
-                             total_feedbacks=total_feedbacks)
+                             feedbacks=feedbacks_data, 
+                             professor_nome=professor_nome,
+                             professor_id=professor_id,
+                             disciplina_codigo=disciplina_codigo)
     except Exception as e:
         flash(f'Erro ao buscar feedbacks: {str(e)}', 'danger')
         return redirect(url_for('disciplinas'))
@@ -368,7 +384,7 @@ def feedbacks_turma(turma_id):
 @app.route('/turma/<int:turma_id>/documentos')
 def documentos_turma(turma_id):
     turma = Turma.query.get_or_404(turma_id)
-    
+
     # Buscar documentos relacionados à turma
     documentos = db.session.query(DocumentoAvaliacao).join(
         CriterioAvaliacaoTurma,
@@ -376,7 +392,7 @@ def documentos_turma(turma_id):
     ).filter(
         CriterioAvaliacaoTurma.fk_numero_identificacao_turma == turma_id
     ).all()
-    
+
     return render_template('documentos_turma.html', turma=turma, documentos=documentos)
 
 @app.route('/documento/<int:documento_id>')
@@ -391,19 +407,35 @@ def baixar_documento(documento_id):
 
 @app.route('/professor/<int:professor_id>/documentos')
 def documentos_professor(professor_id):
-    professor = Professor.query.get_or_404(professor_id)
-    documentos = db.session.query(DocumentoAvaliacao).join(
-        CriterioAvaliacaoTurma,
-        DocumentoAvaliacao.fk_numero_identificacao_avaliacao == CriterioAvaliacaoTurma.numero_identificacao_avaliacao
-    ).join(
-        Turma,
-        CriterioAvaliacaoTurma.fk_numero_identificacao_turma == Turma.numero_identificacao_turma
-    ).join(
-        Feedback,
-        (Feedback.pfk_numero_identificacao_turma == Turma.numero_identificacao_turma) &
-        (Feedback.pfk_codigo_professor == professor_id)
-    ).all()
-    return render_template('documentos_professor.html', professor=professor, documentos=documentos)
+    try:
+        professor = Professor.query.get_or_404(professor_id)
+
+        resultado = db.session.execute(text("""
+        SELECT da.Num_Idf_Doc as numero_identificacao_documento,
+               da.Nome_Arq as nome_arquivo,
+               da.Tipo_Doc as tipo_documento,
+               d.Cod_Dis as disciplina_codigo
+        FROM Doc_Aval da
+        JOIN Crit_Aval_Tur cat ON da.fk_Num_Idf_Aval = cat.Num_Idf_Aval
+        JOIN Tur t ON cat.fk_Num_Idf_Tur = t.Num_Idf_Tur
+        JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
+        JOIN Fdbk f ON t.Num_Idf_Tur = f.pfk_Num_Idf_Tur AND f.pfk_Cod_Prof = :prof_id
+        ORDER BY da.Nome_Arq
+        """), {"prof_id": professor_id})
+        documentos_data = resultado.fetchall()
+
+        # Pegar o código da disciplina do primeiro documento, ou usar um padrão
+        disciplina_codigo = 'CIC0004'  # fallback
+        if documentos_data:
+            disciplina_codigo = documentos_data[0].disciplina_codigo
+
+        return render_template('documentos_professor.html', 
+                             documentos=documentos_data, 
+                             professor=professor,
+                             disciplina_codigo=disciplina_codigo)
+    except Exception as e:
+        flash(f'Erro ao buscar documentos: {str(e)}', 'danger')
+        return redirect(url_for('home'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
