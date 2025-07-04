@@ -24,40 +24,23 @@
                 {% endif %}
             {% endwith %}
 
-            {% if turmas_professores %}
+            {% if turmas %}
                 <div class="row">
-                    {% for tp in turmas_professores %}
+                    {% for turma in turmas %}
                         <div class="col-md-6 col-lg-4 mb-4">
                             <div class="card h-100 shadow-sm">
                                 <div class="card-body">
-                                    <h5 class="card-title text-primary">{{ tp.Nom_Dis }}</h5>
-                                    <h6 class="card-subtitle mb-2 text-muted">Turma {{ tp.Num_Idf_Tur }}</h6>
+                                    <h5 class="card-title">{{ turma.disciplina.nome_disciplina }}</h5>
                                     <p class="card-text">
-                                        <strong>Professor:</strong> {{ tp.Nom_Prof }}<br>
-                                        <small class="text-muted">
-                                            <i class="fas fa-comments"></i> 
-                                            {{ tp.total_feedbacks }} feedback{{ 's' if tp.total_feedbacks != 1 else '' }}
-                                        </small>
+                                        <strong>Turma:</strong> {{ turma.numero_identificacao_turma }}<br>
+                                        <strong>Disciplina:</strong> {{ turma.disciplina.codigo_disciplina }}<br>
+                                        <strong>Período:</strong> {{ turma.periodo.codigo_periodo }}
                                     </p>
-                                    <div class="row mt-2">
-                                        <div class="col-6">
-                                            <small class="text-success">
-                                                <i class="fas fa-star"></i> 
-                                                <strong>Qualidade:</strong> {{ "%.1f"|format(tp.media_qualidade) }}/5
-                                            </small>
-                                        </div>
-                                        <div class="col-6">
-                                            <small class="text-info">
-                                                <i class="fas fa-chart-bar"></i> 
-                                                <strong>Dificuldade:</strong> {{ "%.1f"|format(tp.media_dificuldade) }}/5
-                                            </small>
-                                        </div>
-                                    </div>
                                 </div>
-                                <div class="card-footer bg-transparent">
-                                    <a href="{{ url_for('ver_feedbacks', turma_id=tp.pfk_Num_Idf_Tur, professor_id=tp.pfk_Cod_Prof) }}" 
-                                       class="btn btn-primary btn-sm w-100">
-                                        <i class="fas fa-eye"></i> Ver Feedbacks
+                                <div class="card-footer">
+                                    <a href="{{ url_for('feedbacks_turma', turma_id=turma.numero_identificacao_turma) }}" 
+                                       class="btn btn-primary w-100">
+                                        <i class="fas fa-comments"></i> Ver Feedbacks
                                     </a>
                                 </div>
                             </div>
@@ -66,17 +49,15 @@
                 </div>
             {% else %}
                 <div class="text-center py-5">
-                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                    <h4 class="text-muted">Nenhuma turma avaliada ainda</h4>
-                    <p class="text-muted">Seja o primeiro a avaliar uma turma!</p>
-                    <a href="{{ url_for('criar_feedback') }}" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Criar Feedback
+                    <i class="fas fa-exclamation-circle fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">Nenhuma turma avaliada encontrada</h4>
+                    <p class="text-muted">Ainda não há turmas com feedbacks cadastrados.</p>
+                    <a href="{{ url_for('feedback') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Dar Primeiro Feedback
                     </a>
                 </div>
             {% endif %}
         </div>
     </div>
 </div>
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 {% endblock %}

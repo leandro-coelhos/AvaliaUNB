@@ -338,11 +338,6 @@ def feedbacks_turma(turma_id):
         flash(f'Erro ao buscar feedbacks da turma: {str(e)}', 'danger')
         return redirect(url_for('turmas_avaliadas'))
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
-
-
-
 @app.route('/documento/<int:documento_id>')
 def baixar_documento(documento_id):
     documento = DocumentoAvaliacao.query.get_or_404(documento_id)
@@ -369,54 +364,5 @@ def documentos_professor(professor_id):
     ).all()
     return render_template('documentos_professor.html', professor=professor, documentos=documentos)
 
-class Usuario(db.Model):
-    __tablename__ = 'Usr'
-
-    numero_identificacao_usuario = db.Column('Num_Idf_Usr', db.Integer, primary_key=True)
-    nome_usuario = db.Column('Nom_Usr', db.String(25))
-    email_usuario = db.Column('Email_Usr', db.String(35))
-    telefone_usuario = db.Column('Tel_Usr', db.String(20))
-    matricula_usuario = db.Column('Mat_Usr', db.String(20))
-    senha_usuario = db.Column('Senha_Usr', db.String(255))
-    fk_codigo_tipo_usuario = db.Column('fk_Cod_Tp_Usr', db.SmallInteger, db.ForeignKey('Tp_Usr.Cod_Tp_Usr'), nullable=False)
-
-    feedbacks = db.relationship('Feedback', backref='usuario', lazy=True)
-
-class Usuario(db.Model):
-    __tablename__ = 'Usr'
-
-    numero_identificacao_usuario = db.Column('Num_Idf_Usr', db.Integer, primary_key=True)
-    nome_usuario = db.Column('Nom_Usr', db.String(25))
-    email_usuario = db.Column('Email_Usr', db.String(35))
-    telefone_usuario = db.Column('Tel_Usr', db.String(20))
-    matricula_usuario = db.Column('Mat_Usr', db.String(20))
-    senha_usuario = db.Column('Senha_Usr', db.String(255))
-    fk_codigo_tipo_usuario = db.Column('fk_Cod_Tp_Usr', db.SmallInteger, db.ForeignKey('Tp_Usr.Cod_Tp_Usr'), nullable=False)
-
-    feedbacks = db.relationship('Feedback', backref='usuario', lazy=True)
-
-class Usuario(db.Model):
-    __tablename__ = 'Usr'
-
-    numero_identificacao_usuario = db.Column('Num_Idf_Usr', db.Integer, primary_key=True)
-    nome_usuario = db.Column('Nom_Usr', db.String(25))
-    email_usuario = db.Column('Email_Usr', db.String(35))
-    telefone_usuario = db.Column('Tel_Usr', db.String(20))
-    matricula_usuario = db.Column('Mat_Usr', db.String(20))
-    senha_usuario = db.Column('Senha_Usr', db.String(255))
-    fk_codigo_tipo_usuario = db.Column('fk_Cod_Tp_Usr', db.SmallInteger, db.ForeignKey('Tp_Usr.Cod_Tp_Usr'), nullable=False)
-
-    feedbacks = db.relationship('Feedback', backref='usuario', lazy=True)
-
-class Usuario(db.Model):
-    __tablename__ = 'Usr'
-
-    numero_identificacao_usuario = db.Column('Num_Idf_Usr', db.Integer, primary_key=True)
-    nome_usuario = db.Column('Nom_Usr', db.String(25))
-    email_usuario = db.Column('Email_Usr', db.String(35))
-    telefone_usuario = db.Column('Tel_Usr', db.String(20))
-    matricula_usuario = db.Column('Mat_Usr', db.String(20))
-    senha_usuario = db.Column('Senha_Usr', db.String(255))
-    fk_codigo_tipo_usuario = db.Column('fk_Cod_Tp_Usr', db.SmallInteger, db.ForeignKey('Tp_Usr.Cod_Tp_Usr'), nullable=False)
-
-    feedbacks = db.relationship('Feedback', backref='usuario', lazy=True)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
