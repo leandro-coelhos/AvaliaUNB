@@ -1,4 +1,3 @@
-
 from main import app, db
 from models import (Departamento, Disciplina, Professor, TipoUsuario, 
                    Usuario, PeriodoLetivo, Turma, TipoAvaliacao, 
@@ -34,27 +33,27 @@ def popular_banco():
             Disciplina(codigo_disciplina='CIC0097', nome_disciplina='Estruturas de Dados', fk_codigo_departamento='CIC'),
             Disciplina(codigo_disciplina='CIC0201', nome_disciplina='Redes de Computadores', fk_codigo_departamento='CIC'),
             Disciplina(codigo_disciplina='CIC0169', nome_disciplina='Engenharia de Software', fk_codigo_departamento='CIC'),
-            
+
             # Matemática
             Disciplina(codigo_disciplina='MAT0025', nome_disciplina='Cálculo 1', fk_codigo_departamento='MAT'),
             Disciplina(codigo_disciplina='MAT0026', nome_disciplina='Cálculo 2', fk_codigo_departamento='MAT'),
             Disciplina(codigo_disciplina='MAT0116', nome_disciplina='Álgebra Linear', fk_codigo_departamento='MAT'),
             Disciplina(codigo_disciplina='MAT0027', nome_disciplina='Cálculo 3', fk_codigo_departamento='MAT'),
-            
+
             # Física
             Disciplina(codigo_disciplina='FIS0001', nome_disciplina='Física 1', fk_codigo_departamento='FIS'),
             Disciplina(codigo_disciplina='FIS0002', nome_disciplina='Física 2', fk_codigo_departamento='FIS'),
             Disciplina(codigo_disciplina='FIS0003', nome_disciplina='Física 3', fk_codigo_departamento='FIS'),
-            
+
             # Engenharia
             Disciplina(codigo_disciplina='ENG0001', nome_disciplina='Introdução à Engenharia', fk_codigo_departamento='ENG'),
             Disciplina(codigo_disciplina='ENG0100', nome_disciplina='Desenho Técnico', fk_codigo_departamento='ENG'),
             Disciplina(codigo_disciplina='ENG0200', nome_disciplina='Mecânica dos Materiais', fk_codigo_departamento='ENG'),
-            
+
             # Estatística
             Disciplina(codigo_disciplina='EST0001', nome_disciplina='Estatística Descritiva', fk_codigo_departamento='EST'),
             Disciplina(codigo_disciplina='EST0002', nome_disciplina='Probabilidade', fk_codigo_departamento='EST'),
-            
+
             # Química
             Disciplina(codigo_disciplina='QUI0001', nome_disciplina='Química Geral', fk_codigo_departamento='QUI'),
             Disciplina(codigo_disciplina='QUI0002', nome_disciplina='Química Orgânica', fk_codigo_departamento='QUI'),
@@ -73,27 +72,27 @@ def popular_banco():
             Professor(codigo_professor=4, nome_professor='Prof. Ana Oliveira'),
             Professor(codigo_professor=5, nome_professor='Prof. Carlos Lima'),
             Professor(codigo_professor=6, nome_professor='Prof. Fernanda Rocha'),
-            
+
             # Professores de Matemática
             Professor(codigo_professor=7, nome_professor='Prof. Roberto Alves'),
             Professor(codigo_professor=8, nome_professor='Prof. Juliana Pereira'),
             Professor(codigo_professor=9, nome_professor='Prof. Marcos Vieira'),
             Professor(codigo_professor=10, nome_professor='Prof. Luciana Gomes'),
-            
+
             # Professores de Física
             Professor(codigo_professor=11, nome_professor='Prof. Eduardo Martins'),
             Professor(codigo_professor=12, nome_professor='Prof. Beatriz Nunes'),
             Professor(codigo_professor=13, nome_professor='Prof. Alexandre Dias'),
-            
+
             # Professores de Engenharia
             Professor(codigo_professor=14, nome_professor='Prof. Ricardo Monteiro'),
             Professor(codigo_professor=15, nome_professor='Prof. Patrícia Lopes'),
             Professor(codigo_professor=16, nome_professor='Prof. Thiago Ribeiro'),
-            
+
             # Professores de Estatística
             Professor(codigo_professor=17, nome_professor='Prof. Camila Torres'),
             Professor(codigo_professor=18, nome_professor='Prof. Diego Ferreira'),
-            
+
             # Professores de Química
             Professor(codigo_professor=19, nome_professor='Prof. Sandra Mendes'),
             Professor(codigo_professor=20, nome_professor='Prof. André Barbosa'),
@@ -186,31 +185,31 @@ def popular_banco():
             Turma(numero_identificacao_turma=3, fk_codigo_disciplina='CIC0097', fk_codigo_periodo='2024.1'),
             Turma(numero_identificacao_turma=4, fk_codigo_disciplina='CIC0201', fk_codigo_periodo='2024.2'),
             Turma(numero_identificacao_turma=5, fk_codigo_disciplina='CIC0169', fk_codigo_periodo='2024.2'),
-            
+
             # Turmas de Matemática
             Turma(numero_identificacao_turma=6, fk_codigo_disciplina='MAT0025', fk_codigo_periodo='2024.1'),
             Turma(numero_identificacao_turma=7, fk_codigo_disciplina='MAT0026', fk_codigo_periodo='2024.1'),
             Turma(numero_identificacao_turma=8, fk_codigo_disciplina='MAT0116', fk_codigo_periodo='2024.2'),
             Turma(numero_identificacao_turma=9, fk_codigo_disciplina='MAT0027', fk_codigo_periodo='2024.2'),
-            
+
             # Turmas de Física
             Turma(numero_identificacao_turma=10, fk_codigo_disciplina='FIS0001', fk_codigo_periodo='2024.1'),
             Turma(numero_identificacao_turma=11, fk_codigo_disciplina='FIS0002', fk_codigo_periodo='2024.1'),
             Turma(numero_identificacao_turma=12, fk_codigo_disciplina='FIS0003', fk_codigo_periodo='2024.2'),
-            
+
             # Turmas de Engenharia
             Turma(numero_identificacao_turma=13, fk_codigo_disciplina='ENG0001', fk_codigo_periodo='2024.1'),
             Turma(numero_identificacao_turma=14, fk_codigo_disciplina='ENG0100', fk_codigo_periodo='2024.2'),
             Turma(numero_identificacao_turma=15, fk_codigo_disciplina='ENG0200', fk_codigo_periodo='2024.2'),
-            
+
             # Turmas de Estatística
             Turma(numero_identificacao_turma=16, fk_codigo_disciplina='EST0001', fk_codigo_periodo='2024.1'),
             Turma(numero_identificacao_turma=17, fk_codigo_disciplina='EST0002', fk_codigo_periodo='2024.2'),
-            
+
             # Turmas de Química
             Turma(numero_identificacao_turma=18, fk_codigo_disciplina='QUI0001', fk_codigo_periodo='2024.1'),
             Turma(numero_identificacao_turma=19, fk_codigo_disciplina='QUI0002', fk_codigo_periodo='2024.2'),
-            
+
             # Turmas extras de semestres anteriores
             Turma(numero_identificacao_turma=20, fk_codigo_disciplina='CIC0004', fk_codigo_periodo='2023.2'),
             Turma(numero_identificacao_turma=21, fk_codigo_disciplina='MAT0025', fk_codigo_periodo='2023.2'),
@@ -248,55 +247,55 @@ def popular_banco():
             # Feedbacks para professores de Ciência da Computação
             Feedback(pfk_numero_identificacao_turma=1, pfk_codigo_professor=1, pfk_numero_identificacao_usuario=1, nivel_dificuldade=3, qualidade=4, comentario='Excelente professor, explica muito bem!'),
             Feedback(pfk_numero_identificacao_turma=1, pfk_codigo_professor=1, pfk_numero_identificacao_usuario=3, nivel_dificuldade=4, qualidade=5, comentario='Aulas dinâmicas e bem estruturadas.'),
-            
+
             Feedback(pfk_numero_identificacao_turma=2, pfk_codigo_professor=2, pfk_numero_identificacao_usuario=1, nivel_dificuldade=4, qualidade=5, comentario='Matéria difícil mas a professora é ótima!'),
             Feedback(pfk_numero_identificacao_turma=2, pfk_codigo_professor=2, pfk_numero_identificacao_usuario=4, nivel_dificuldade=3, qualidade=4, comentario='Muito didática e paciente.'),
-            
+
             Feedback(pfk_numero_identificacao_turma=3, pfk_codigo_professor=3, pfk_numero_identificacao_usuario=1, nivel_dificuldade=5, qualidade=3, comentario='Matéria complexa, professor poderia melhorar didática.'),
             Feedback(pfk_numero_identificacao_turma=3, pfk_codigo_professor=3, pfk_numero_identificacao_usuario=5, nivel_dificuldade=4, qualidade=4, comentario='Bom domínio do conteúdo.'),
-            
+
             Feedback(pfk_numero_identificacao_turma=4, pfk_codigo_professor=4, pfk_numero_identificacao_usuario=3, nivel_dificuldade=3, qualidade=5, comentario='Professora excepcional! Recomendo muito.'),
-            
+
             Feedback(pfk_numero_identificacao_turma=5, pfk_codigo_professor=5, pfk_numero_identificacao_usuario=4, nivel_dificuldade=4, qualidade=4, comentario='Aulas práticas muito úteis.'),
-            
+
             Feedback(pfk_numero_identificacao_turma=20, pfk_codigo_professor=6, pfk_numero_identificacao_usuario=5, nivel_dificuldade=2, qualidade=5, comentario='Professora incrível, faz a matéria parecer fácil!'),
-            
+
             # Feedbacks para professores de Matemática
             Feedback(pfk_numero_identificacao_turma=6, pfk_codigo_professor=7, pfk_numero_identificacao_usuario=1, nivel_dificuldade=5, qualidade=3, comentario='Cálculo é difícil, professor ok.'),
             Feedback(pfk_numero_identificacao_turma=6, pfk_codigo_professor=7, pfk_numero_identificacao_usuario=3, nivel_dificuldade=4, qualidade=4, comentario='Explica bem os conceitos básicos.'),
-            
+
             Feedback(pfk_numero_identificacao_turma=7, pfk_codigo_professor=8, pfk_numero_identificacao_usuario=4, nivel_dificuldade=4, qualidade=5, comentario='Excelente professora de matemática!'),
-            
+
             Feedback(pfk_numero_identificacao_turma=8, pfk_codigo_professor=9, pfk_numero_identificacao_usuario=1, nivel_dificuldade=3, qualidade=4, comentario='Álgebra linear bem explicada.'),
-            
+
             Feedback(pfk_numero_identificacao_turma=9, pfk_codigo_professor=10, pfk_numero_identificacao_usuario=5, nivel_dificuldade=5, qualidade=4, comentario='Cálculo 3 é pesado, mas ela ajuda muito.'),
-            
+
             Feedback(pfk_numero_identificacao_turma=21, pfk_codigo_professor=7, pfk_numero_identificacao_usuario=4, nivel_dificuldade=4, qualidade=3, comentario='Segunda vez com ele, melhorou um pouco.'),
-            
+
             # Feedbacks para professores de Física
             Feedback(pfk_numero_identificacao_turma=10, pfk_codigo_professor=11, pfk_numero_identificacao_usuario=3, nivel_dificuldade=4, qualidade=4, comentario='Física experimental muito boa.'),
-            
+
             Feedback(pfk_numero_identificacao_turma=11, pfk_codigo_professor=12, pfk_numero_identificacao_usuario=1, nivel_dificuldade=3, qualidade=5, comentario='Melhor professora de física que já tive!'),
-            
+
             Feedback(pfk_numero_identificacao_turma=12, pfk_codigo_professor=13, pfk_numero_identificacao_usuario=5, nivel_dificuldade=5, qualidade=3, comentario='Física 3 é complicada, professor razoável.'),
-            
+
             # Feedbacks para professores de Engenharia
             Feedback(pfk_numero_identificacao_turma=13, pfk_codigo_professor=14, pfk_numero_identificacao_usuario=4, nivel_dificuldade=2, qualidade=4, comentario='Boa introdução à engenharia.'),
-            
+
             Feedback(pfk_numero_identificacao_turma=14, pfk_codigo_professor=15, pfk_numero_identificacao_usuario=3, nivel_dificuldade=3, qualidade=4, comentario='Desenho técnico bem ensinado.'),
-            
+
             Feedback(pfk_numero_identificacao_turma=15, pfk_codigo_professor=16, pfk_numero_identificacao_usuario=1, nivel_dificuldade=4, qualidade=5, comentario='Professor muito competente!'),
-            
+
             # Feedbacks para professores de Estatística
             Feedback(pfk_numero_identificacao_turma=16, pfk_codigo_professor=17, pfk_numero_identificacao_usuario=5, nivel_dificuldade=2, qualidade=5, comentario='Estatística nunca foi tão fácil!'),
-            
+
             Feedback(pfk_numero_identificacao_turma=17, pfk_codigo_professor=18, pfk_numero_identificacao_usuario=3, nivel_dificuldade=4, qualidade=4, comentario='Probabilidade bem explicada.'),
-            
+
             # Feedbacks para professores de Química
             Feedback(pfk_numero_identificacao_turma=18, pfk_codigo_professor=19, pfk_numero_identificacao_usuario=4, nivel_dificuldade=3, qualidade=4, comentario='Química geral interessante.'),
-            
+
             Feedback(pfk_numero_identificacao_turma=19, pfk_codigo_professor=20, pfk_numero_identificacao_usuario=1, nivel_dificuldade=4, qualidade=3, comentario='Orgânica é difícil, professor ok.'),
-            
+
             # Alguns feedbacks extras para ter mais variedade
             Feedback(pfk_numero_identificacao_turma=1, pfk_codigo_professor=1, pfk_numero_identificacao_usuario=4, nivel_dificuldade=2, qualidade=5, comentario='Melhor professor de programação!'),
             Feedback(pfk_numero_identificacao_turma=6, pfk_codigo_professor=7, pfk_numero_identificacao_usuario=5, nivel_dificuldade=5, qualidade=2, comentario='Muito difícil de entender.'),
@@ -321,7 +320,7 @@ def popular_banco():
             GROUP BY p.Cod_Prof, p.Nom_Prof
             ORDER BY p.Nom_Prof
             """))
-            
+
             db.session.execute(text("""
             CREATE VIEW IF NOT EXISTS view_feedbacks_professor AS
             SELECT f.pfk_Num_Idf_Tur as turma_id,
@@ -340,7 +339,7 @@ def popular_banco():
             JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
             JOIN Prof p ON f.pfk_Cod_Prof = p.Cod_Prof
             """))
-            
+
             db.session.execute(text("""
             CREATE VIEW IF NOT EXISTS view_medias_professor AS
             SELECT f.pfk_Cod_Prof as professor_id,
@@ -352,7 +351,7 @@ def popular_banco():
             JOIN Prof p ON f.pfk_Cod_Prof = p.Cod_Prof
             GROUP BY f.pfk_Cod_Prof, p.Nom_Prof
             """))
-            
+
             db.session.execute(text("""
             CREATE VIEW IF NOT EXISTS view_feedbacks_turma AS
             SELECT f.pfk_Num_Idf_Tur as turma_id,
@@ -370,7 +369,7 @@ def popular_banco():
             JOIN Tur t ON f.pfk_Num_Idf_Tur = t.Num_Idf_Tur
             JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
             """))
-            
+
             db.session.commit()
             print("Views criadas com sucesso!")
         except Exception as e:
@@ -396,3 +395,4 @@ def popular_banco():
 
 if __name__ == '__main__':
     popular_banco()
+```
