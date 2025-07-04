@@ -218,8 +218,20 @@ def meus_feedbacks():
         flash('Você precisa estar logado!', 'warning')
         return redirect(url_for('login'))
 
-    feedbacks_usuario = Feedback.query.filter_by(pfk_numero_identificacao_usuario=session['usuario_id']).all()
-    return render_template('meus_feedbacks.html', feedbacks=feedbacks_usuario)
+    # Buscar feedbacks com joins para ter acesso aos dados relacionados
+    feedbacks_data = db.session.query(
+        Feedback, Turma, Professor, Disciplina
+    ).join(
+        Turma, Feedback.pfk_numero_identificacao_turma == Turma.numero_identificacao_turma
+    ).join(
+        Professor, Feedback.pfk_codigo_professor == Professor.codigo_professor
+    ).join(
+        Disciplina, Turma.fk_codigo_disciplina == Disciplina.codigo_disciplina
+    ).filter(
+        Feedback.pfk_numero_identificacao_usuario == session['usuario_id']
+    ).all()
+    
+    return render_template('meus_feedbacks.html', feedbacks=feedbacks_data)
 
 @app.route('/feedback/editar/<int:turma_id>/<int:professor_id>', methods=['GET', 'POST'])
 def editar_feedback(turma_id, professor_id):
