@@ -372,14 +372,43 @@ def feedbacks_detalhes(professor_id):
         """), {"prof_id": professor_id})
         feedbacks_data = resultado.fetchall()
 
-        if feedbacks_data:
-            professor_nome = feedbacks_data[0].nome_professor
-            disciplina_codigo = feedbacks_data[0].disciplina_codigo
+        # Buscar documentos para cada feedback
+        feedbacks_com_documentos = []
+        for feedback in feedbacks_data:
+            documentos_resultado = db.session.execute(text("""
+            SELECT da.Num_Idf_Doc as numero_identificacao_documento,
+                   da.Nome_Arq as nome_arquivo,
+                   da.Tipo_Doc as tipo_documento
+            FROM Doc_Aval da
+            JOIN Crit_Aval_Tur cat ON da.fk_Num_Idf_Aval = cat.Num_Idf_Aval
+            WHERE cat.fk_Num_Idf_Tur = :turma_id
+            """), {"turma_id": feedback.turma_id})
+            documentos = documentos_resultado.fetchall()
+            
+            feedback_dict = {
+                'turma_id': feedback.turma_id,
+                'professor_id': feedback.professor_id,
+                'usuario_id': feedback.usuario_id,
+                'nivel_dificuldade': feedback.nivel_dificuldade,
+                'qualidade': feedback.qualidade,
+                'comentario': feedback.comentario,
+                'nome_usuario': feedback.nome_usuario,
+                'numero_turma': feedback.numero_turma,
+                'nome_disciplina': feedback.nome_disciplina,
+                'disciplina_codigo': feedback.disciplina_codigo,
+                'nome_professor': feedback.nome_professor,
+                'documentos': documentos
+            }
+            feedbacks_com_documentos.append(feedback_dict)
+
+        if feedbacks_com_documentos:
+            professor_nome = feedbacks_com_documentos[0]['nome_professor']
+            disciplina_codigo = feedbacks_com_documentos[0]['disciplina_codigo']
             
             # Calcular estatísticas
-            total_feedbacks = len(feedbacks_data)
-            media_qualidade = sum(feedback.qualidade for feedback in feedbacks_data) / total_feedbacks
-            media_dificuldade = sum(feedback.nivel_dificuldade for feedback in feedbacks_data) / total_feedbacks
+            total_feedbacks = len(feedbacks_com_documentos)
+            media_qualidade = sum(feedback['qualidade'] for feedback in feedbacks_com_documentos) / total_feedbacks
+            media_dificuldade = sum(feedback['nivel_dificuldade'] for feedback in feedbacks_com_documentos) / total_feedbacks
         else:
             professor = Professor.query.get_or_404(professor_id)
             professor_nome = professor.nome_professor
@@ -389,7 +418,7 @@ def feedbacks_detalhes(professor_id):
             media_dificuldade = 0
 
         return render_template('feedbacks_detalhes.html', 
-                             feedbacks=feedbacks_data, 
+                             feedbacks=feedbacks_com_documentos, 
                              professor_nome=professor_nome,
                              professor_id=professor_id,
                              disciplina_codigo=disciplina_codigo,

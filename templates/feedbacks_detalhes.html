@@ -71,6 +71,24 @@
                                             <p class="card-text"><strong>Disciplina:</strong> {{ feedback.nome_disciplina }}</p>
                                             <p class="card-text"><strong>Turma:</strong> {{ feedback.numero_turma }}</p>
                                             <p class="card-text">{{ feedback.comentario }}</p>
+                                            
+                                            {% if feedback.documentos %}
+                                                <div class="mt-3">
+                                                    <h6 class="text-primary">
+                                                        <i class="fas fa-paperclip"></i> Documentos Anexados:
+                                                    </h6>
+                                                    {% for documento in feedback.documentos %}
+                                                        <div class="mb-2">
+                                                            <a href="{{ url_for('baixar_documento', documento_id=documento.numero_identificacao_documento) }}" 
+                                                               class="btn btn-outline-success btn-sm" target="_blank">
+                                                                <i class="fas fa-file-pdf"></i> 
+                                                                {{ documento.nome_arquivo }}
+                                                                <small class="text-muted">({{ documento.tipo_documento }})</small>
+                                                            </a>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
                                         </div>
                                         <div class="col-md-4 text-md-end">
                                             <div class="mb-2">
