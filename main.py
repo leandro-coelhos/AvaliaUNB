@@ -5,6 +5,7 @@ from forms import FormularioLogin, FormularioCadastro, FormularioFeedback
 from models import db, Usuario, Professor, Turma, Feedback, Disciplina, TipoUsuario, DocumentoAvaliacao, CriterioAvaliacaoTurma
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import text
+from procedures import ProceduresSimuladas
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'sua_chave_secreta_aqui'
@@ -146,23 +147,9 @@ def disciplinas():
 def professores_por_disciplina(codigo_disciplina):
     disciplina = Disciplina.query.get_or_404(codigo_disciplina)
 
-    # Buscar professores que deram aula nesta disciplina
+    # Usar procedure simulada para buscar ranking de professores por disciplina
     try:
-        resultado = db.session.execute(text("""
-        SELECT DISTINCT p.Cod_Prof as codigo_professor,
-               p.Nom_Prof as nome_professor,
-               COUNT(f.pfk_Cod_Prof) as total_feedbacks,
-               COALESCE(AVG(f.Qual), 0) as media_qualidade,
-               COALESCE(AVG(f.Nvl_Dif), 0) as media_dificuldade
-        FROM Prof p
-        JOIN Fdbk f ON p.Cod_Prof = f.pfk_Cod_Prof
-        JOIN Tur t ON f.pfk_Num_Idf_Tur = t.Num_Idf_Tur
-        JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
-        WHERE d.Cod_Dis = :codigo_dis
-        GROUP BY p.Cod_Prof, p.Nom_Prof
-        ORDER BY p.Nom_Prof
-        """), {"codigo_dis": codigo_disciplina})
-        professores_data = resultado.fetchall()
+        professores_data = ProceduresSimuladas.obter_ranking_professores(codigo_disciplina)
         return render_template('professores_disciplina.html', 
                              professores=professores_data, 
                              disciplina=disciplina)
@@ -356,27 +343,8 @@ def feedbacks_detalhes(professor_id):
         return redirect(url_for('login'))
     
     try:
-        resultado = db.session.execute(text("""
-        SELECT f.pfk_Num_Idf_Tur as turma_id,
-               f.pfk_Cod_Prof as professor_id,
-               f.pfk_Num_Idf_Usr as usuario_id,
-               f.Nvl_Dif as nivel_dificuldade,
-               f.Qual as qualidade,
-               f.Coment as comentario,
-               u.Nom_Usr as nome_usuario,
-               t.Num_Idf_Tur as numero_turma,
-               d.Nom_Dis as nome_disciplina,
-               d.Cod_Dis as disciplina_codigo,
-               p.Nom_Prof as nome_professor
-        FROM Fdbk f
-        JOIN Usr u ON f.pfk_Num_Idf_Usr = u.Num_Idf_Usr
-        JOIN Tur t ON f.pfk_Num_Idf_Tur = t.Num_Idf_Tur
-        JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
-        JOIN Prof p ON f.pfk_Cod_Prof = p.Cod_Prof
-        WHERE f.pfk_Cod_Prof = :prof_id
-        ORDER BY f.Qual DESC, f.Nvl_Dif ASC
-        """), {"prof_id": professor_id})
-        feedbacks_data = resultado.fetchall()
+        # Usar procedure simulada para buscar feedbacks
+        feedbacks_data = ProceduresSimuladas.buscar_feedbacks_professor(professor_id)
 
         # Buscar documentos para cada feedback específico do usuário
         feedbacks_com_documentos = []
@@ -511,5 +479,47 @@ def documentos_professor(professor_id):
         flash(f'Erro ao buscar documentos: {str(e)}', 'danger')
         return redirect(url_for('home'))
 
+@app.route('/estatisticas')
+def estatisticas():
+    """Página de estatísticas usando procedures simuladas"""
+    if 'usuario_id' not in session or session.get('tipo_usuario') != 2:
+        flash('Acesso restrito a administradores!', 'warning')
+        return redirect(url_for('home'))
+    
+    try:
+        # Usar procedures simuladas
+        stats_sistema = ProceduresSimuladas.obter_estatisticas_sistema()
+        ranking_professores = ProceduresSimuladas.obter_ranking_professores()
+        
+        return render_template('estatisticas.html', 
+                             stats=stats_sistema,
+                             ranking=ranking_professores)
+    except Exception as e:
+        flash(f'Erro ao carregar estatísticas: {str(e)}', 'danger')
+        return redirect(url_for('home'))
+
+@app.route('/api/procedure/ranking')
+def api_ranking_professores():
+    """API que demonstra uso de procedure simulada"""
+    try:
+        disciplina_id = request.args.get('disciplina_id')
+        ranking = ProceduresSimuladas.obter_ranking_professores(disciplina_id)
+        
+        ranking_data = [
+            {
+                "codigo_professor": r.codigo_professor,
+                "nome_professor": r.nome_professor,
+                "nome_disciplina": r.nome_disciplina,
+                "media_qualidade": round(r.media_qualidade, 2),
+                "media_dificuldade": round(r.media_dificuldade, 2),
+                "total_feedbacks": r.total_feedbacks
+            }
+            for r in ranking
+        ]
+        
+        return jsonify({"sucesso": True, "ranking": ranking_data})
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)

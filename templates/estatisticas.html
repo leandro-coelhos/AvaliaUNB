@@ -1,0 +1,176 @@
+
+{% extends "base.html" %}
+
+{% block title %}Estatísticas do Sistema{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4 neon-text">
+        📊 Estatísticas do Sistema
+    </h1>
+
+    <!-- Estatísticas Gerais -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="cyber-card">
+                <h3 class="neon-text mb-3">📈 Estatísticas Gerais</h3>
+                <div class="row">
+                    <div class="col-md-2">
+                        <div class="stat-box">
+                            <h4>{{ stats.total_professores }}</h4>
+                            <p>Professores</p>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="stat-box">
+                            <h4>{{ stats.total_usuarios }}</h4>
+                            <p>Usuários</p>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="stat-box">
+                            <h4>{{ stats.total_feedbacks }}</h4>
+                            <p>Feedbacks</p>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="stat-box">
+                            <h4>{{ stats.total_disciplinas }}</h4>
+                            <p>Disciplinas</p>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="stat-box">
+                            <h4>{{ stats.total_turmas }}</h4>
+                            <p>Turmas</p>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="stat-box">
+                            <h4>{{ "%.1f"|format(stats.media_geral_qualidade) }}</h4>
+                            <p>Média Qualidade</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ranking de Professores -->
+    <div class="row">
+        <div class="col-12">
+            <div class="cyber-card">
+                <h3 class="neon-text mb-3">🏆 Ranking de Professores</h3>
+                <p class="text-muted mb-3">
+                    <em>Dados obtidos através de procedure simulada: ProceduresSimuladas.obter_ranking_professores()</em>
+                </p>
+                
+                {% if ranking %}
+                <div class="table-responsive">
+                    <table class="table table-dark table-striped">
+                        <thead>
+                            <tr>
+                                <th>Posição</th>
+                                <th>Professor</th>
+                                <th>Disciplina</th>
+                                <th>Média Qualidade</th>
+                                <th>Média Dificuldade</th>
+                                <th>Total Feedbacks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for professor in ranking[:10] %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ professor.nome_professor }}</td>
+                                <td>{{ professor.nome_disciplina }}</td>
+                                <td>
+                                    <span class="badge 
+                                        {% if professor.media_qualidade >= 4 %}bg-success
+                                        {% elif professor.media_qualidade >= 3 %}bg-warning
+                                        {% else %}bg-danger{% endif %}">
+                                        {{ "%.1f"|format(professor.media_qualidade) }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge 
+                                        {% if professor.media_dificuldade <= 2 %}bg-success
+                                        {% elif professor.media_dificuldade <= 3 %}bg-warning
+                                        {% else %}bg-danger{% endif %}">
+                                        {{ "%.1f"|format(professor.media_dificuldade) }}
+                                    </span>
+                                </td>
+                                <td>{{ professor.total_feedbacks }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center text-muted">Nenhum dado disponível</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Demonstração de API -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="cyber-card">
+                <h3 class="neon-text mb-3">🔌 API de Procedures</h3>
+                <p>Teste a API que usa procedures simuladas:</p>
+                <button id="testarAPI" class="btn btn-primary">Testar API de Ranking</button>
+                <div id="resultadoAPI" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.stat-box {
+    background: rgba(0, 255, 255, 0.1);
+    border: 1px solid #00ffff;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.stat-box h4 {
+    color: #00ffff;
+    font-size: 2em;
+    margin-bottom: 5px;
+}
+
+.stat-box p {
+    color: #fff;
+    margin: 0;
+    font-size: 0.9em;
+}
+</style>
+
+<script>
+document.getElementById('testarAPI').addEventListener('click', function() {
+    const resultadoDiv = document.getElementById('resultadoAPI');
+    resultadoDiv.innerHTML = '<p class="text-info">Carregando...</p>';
+    
+    fetch('/api/procedure/ranking')
+        .then(response => response.json())
+        .then(data => {
+            if (data.sucesso) {
+                let html = '<h5 class="text-success">API funcionando! Top 3 professores:</h5><ul>';
+                data.ranking.slice(0, 3).forEach((prof, index) => {
+                    html += `<li>${index + 1}. ${prof.nome_professor} - Qualidade: ${prof.media_qualidade}</li>`;
+                });
+                html += '</ul>';
+                resultadoDiv.innerHTML = html;
+            } else {
+                resultadoDiv.innerHTML = `<p class="text-danger">Erro: ${data.erro}</p>`;
+            }
+        })
+        .catch(error => {
+            resultadoDiv.innerHTML = `<p class="text-danger">Erro na requisição: ${error}</p>`;
+        });
+});
+</script>
+{% endblock %}
