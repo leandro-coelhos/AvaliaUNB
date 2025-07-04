@@ -4,7 +4,17 @@
 <section class="hero-section text-center">
     <div class="container">
         <h1 class="display-4 fw-bold mb-4 animate-in">🎮 AvaliaUNB</h1>
-        <p class="lead mb-5">Sistema de Avaliação de Professores da Universidade de Brasília</p>
+        <p class="lead mb-4">Sistema de Avaliação de Professores da Universidade de Brasília</p>
+        
+        <div class="text-center mb-4">
+            <a href="{{ url_for('disciplinas') }}" class="btn btn-outline-success me-3 mb-2">
+                📚 Ver Disciplinas
+            </a>
+            <a href="{{ url_for('feedback') }}" class="btn btn-outline-info mb-2">
+                ⭐ Enviar Feedback
+            </a>
+        </div>
+        
         <p class="mb-4 animate-in" style="font-family: 'Orbitron', monospace; font-size: 1.1rem; animation-delay: 0.3s; color: var(--neon-green);">Compartilhe sua experiência acadêmica e ajude outros estudantes a fazer escolhas informadas sobre disciplinas e professores! ⚡</p>
     </div>
 </section>
@@ -71,14 +81,6 @@
                 </ul>
             </div>
             <div class="col-lg-6 text-center">
-                <div class="text-center mb-4">
-                    <a href="{{ url_for('disciplinas') }}" class="btn btn-outline-success me-2 mb-2">
-                        Ver Disciplinas
-                    </a>
-                    <a href="{{ url_for('feedback') }}" class="btn btn-outline-info mb-2">
-                        Enviar Feedback
-                    </a>
-                </div>
                 <div class="p-4">
                     <div style="font-size: 4rem;" class="mb-3 neon-icon" style="color: var(--neon-cyan);">🏛️</div>
                     <p class="text-muted" style="font-family: 'Orbitron', monospace; font-size: 1rem;">Contribua para uma comunidade acadêmica mais transparente e colaborativa na UnB! 🎉</p>
