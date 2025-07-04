@@ -94,6 +94,10 @@ class DocumentoAvaliacao(db.Model):
     nome_arquivo = db.Column('Nome_Arq', db.String(255))
     tipo_documento = db.Column('Tipo_Doc', db.String(50))
     fk_numero_identificacao_avaliacao = db.Column('fk_Num_Idf_Aval', db.Integer, db.ForeignKey('Crit_Aval_Tur.Num_Idf_Aval'), nullable=False)
+    # Campos adicionais para associar ao feedback específico
+    fk_usuario_id = db.Column('fk_Usr_Id', db.Integer, db.ForeignKey('Usr.Num_Idf_Usr'), nullable=True)
+    fk_professor_id = db.Column('fk_Prof_Id', db.SmallInteger, db.ForeignKey('Prof.Cod_Prof'), nullable=True)
+    fk_turma_id = db.Column('fk_Tur_Id', db.SmallInteger, db.ForeignKey('Tur.Num_Idf_Tur'), nullable=True)
 
 class Feedback(db.Model):
     __tablename__ = 'Fdbk'

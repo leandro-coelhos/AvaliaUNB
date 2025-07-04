@@ -242,7 +242,10 @@ def feedback():
                     nome_arquivo=arquivo.filename,
                     tipo_documento=formulario.tipo_documento.data,
                     arquivo_documento=arquivo.read(),
-                    fk_numero_identificacao_avaliacao=criterio.numero_identificacao_avaliacao
+                    fk_numero_identificacao_avaliacao=criterio.numero_identificacao_avaliacao,
+                    fk_usuario_id=session['usuario_id'],
+                    fk_professor_id=formulario.professor.data,
+                    fk_turma_id=formulario.turma.data
                 )
                 db.session.add(documento)
 
@@ -309,7 +312,10 @@ def editar_feedback(turma_id, professor_id):
                 nome_arquivo=arquivo.filename,
                 tipo_documento=formulario.tipo_documento.data,
                 arquivo_documento=arquivo.read(),
-                fk_numero_identificacao_avaliacao=criterio.numero_identificacao_avaliacao
+                fk_numero_identificacao_avaliacao=criterio.numero_identificacao_avaliacao,
+                fk_usuario_id=session['usuario_id'],
+                fk_professor_id=professor_id,
+                fk_turma_id=turma_id
             )
             db.session.add(documento)
 
@@ -372,7 +378,7 @@ def feedbacks_detalhes(professor_id):
         """), {"prof_id": professor_id})
         feedbacks_data = resultado.fetchall()
 
-        # Buscar documentos para cada feedback
+        # Buscar documentos para cada feedback específico do usuário
         feedbacks_com_documentos = []
         for feedback in feedbacks_data:
             documentos_resultado = db.session.execute(text("""
@@ -380,9 +386,14 @@ def feedbacks_detalhes(professor_id):
                    da.Nome_Arq as nome_arquivo,
                    da.Tipo_Doc as tipo_documento
             FROM Doc_Aval da
-            JOIN Crit_Aval_Tur cat ON da.fk_Num_Idf_Aval = cat.Num_Idf_Aval
-            WHERE cat.fk_Num_Idf_Tur = :turma_id
-            """), {"turma_id": feedback.turma_id})
+            WHERE da.fk_Usr_Id = :usuario_id
+            AND da.fk_Prof_Id = :professor_id
+            AND da.fk_Tur_Id = :turma_id
+            """), {
+                "turma_id": feedback.turma_id,
+                "usuario_id": feedback.usuario_id,
+                "professor_id": feedback.professor_id
+            })
             documentos = documentos_resultado.fetchall()
             
             feedback_dict = {
