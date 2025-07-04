@@ -50,9 +50,15 @@
                                     {% endif %}
                                 </div>
                                 <div class="card-footer bg-transparent">
-                                    <small class="text-muted">
-                                        <i class="fas fa-graduation-cap"></i> Disciplina
-                                    </small>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-graduation-cap"></i> Disciplina
+                                        </small>
+                                        <a href="{{ url_for('professores_por_disciplina', codigo_disciplina=disciplina.codigo_disciplina) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-chalkboard-teacher"></i> Ver Professores
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>

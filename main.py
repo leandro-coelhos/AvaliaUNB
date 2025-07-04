@@ -137,21 +137,38 @@ def logout():
     flash('Logout realizado com sucesso!', 'success')
     return redirect(url_for('home'))
 
-@app.route('/professores')
-def professores():
-    try:
-        resultado = db.session.execute(text("SELECT * FROM view_professores_com_feedbacks"))
-        professores_data = resultado.fetchall()
-        return render_template('professores.html', professores=professores_data)
-    except Exception as e:
-        flash(f'Erro ao buscar professores: {str(e)}', 'danger')
-        lista_professores = Professor.query.all()
-        return render_template('professores.html', professores=lista_professores)
-
 @app.route('/disciplinas')
 def disciplinas():
     lista_disciplinas = Disciplina.query.all()
     return render_template('disciplinas.html', disciplinas=lista_disciplinas)
+
+@app.route('/disciplina/<codigo_disciplina>/professores')
+def professores_por_disciplina(codigo_disciplina):
+    disciplina = Disciplina.query.get_or_404(codigo_disciplina)
+    
+    # Buscar professores que deram aula nesta disciplina
+    try:
+        resultado = db.session.execute(text("""
+        SELECT DISTINCT p.Cod_Prof as codigo_professor,
+               p.Nom_Prof as nome_professor,
+               COUNT(f.pfk_Cod_Prof) as total_feedbacks,
+               COALESCE(AVG(f.Qual), 0) as media_qualidade,
+               COALESCE(AVG(f.Nvl_Dif), 0) as media_dificuldade
+        FROM Prof p
+        JOIN Fdbk f ON p.Cod_Prof = f.pfk_Cod_Prof
+        JOIN Tur t ON f.pfk_Num_Idf_Tur = t.Num_Idf_Tur
+        JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
+        WHERE d.Cod_Dis = :codigo_dis
+        GROUP BY p.Cod_Prof, p.Nom_Prof
+        ORDER BY p.Nom_Prof
+        """), {"codigo_dis": codigo_disciplina})
+        professores_data = resultado.fetchall()
+        return render_template('professores_disciplina.html', 
+                             professores=professores_data, 
+                             disciplina=disciplina)
+    except Exception as e:
+        flash(f'Erro ao buscar professores da disciplina: {str(e)}', 'danger')
+        return redirect(url_for('disciplinas'))
 
 @app.route('/feedback', methods=['GET', 'POST'])
 def feedback():
