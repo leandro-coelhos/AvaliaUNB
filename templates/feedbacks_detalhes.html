@@ -1,3 +1,4 @@
+
 {% extends "base.html" %}
 
 {% block title %}Feedbacks - Professor {{ professor.nome_professor }} - AvaliaUNB{% endblock %}
@@ -11,8 +12,8 @@
                     <h2 class="fw-bold">Feedbacks do Professor</h2>
                     <h5 class="text-muted">{{ professor.nome_professor }}</h5>
                 </div>
-                <a href="{{ url_for('professores_por_disciplina', codigo_disciplina=feedbacks[0].disciplina_codigo if feedbacks else 'CIC0004') }}" class="btn btn-outline-primary">
-                    <i class="fas fa-arrow-left"></i> Voltar aos Professores
+                <a href="{{ url_for('disciplinas') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left"></i> Voltar às Disciplinas
                 </a>
             </div>
 
