@@ -420,3 +420,320 @@ def popular_banco():
 - Design responsivo e moderno
 
 O sistema AvaliaUNB representa uma implementação completa e profissional de um sistema de avaliação acadêmica, atendendo a todos os requisitos técnicos especificados com qualidade de código empresarial.
+
+## 11. Tutorial: Executando o Projeto no VS Code
+
+### 11.1 Pré-requisitos
+
+#### Para Mac:
+1. **Instalar Python 3.11+**:
+   ```bash
+   # Usando Homebrew (recomendado)
+   brew install python@3.11
+   
+   # Ou baixar do site oficial: https://www.python.org/downloads/
+   ```
+
+2. **Instalar VS Code**:
+   - Baixar de: https://code.visualstudio.com/
+   - Instalar a extensão "Python" da Microsoft
+
+3. **Instalar Git**:
+   ```bash
+   brew install git
+   ```
+
+#### Para Windows:
+1. **Instalar Python 3.11+**:
+   - Baixar de: https://www.python.org/downloads/
+   - ⚠️ **IMPORTANTE**: Marcar "Add Python to PATH" durante a instalação
+
+2. **Instalar VS Code**:
+   - Baixar de: https://code.visualstudio.com/
+   - Instalar a extensão "Python" da Microsoft
+
+3. **Instalar Git**:
+   - Baixar de: https://git-scm.com/download/win
+
+### 11.2 Clonando o Projeto
+
+#### Opção 1: Download Direto do Replit
+1. No Replit, clicar em "Download as ZIP"
+2. Extrair o arquivo ZIP em uma pasta de sua escolha
+3. Abrir o VS Code na pasta extraída
+
+#### Opção 2: Via Git (se o projeto estiver no GitHub)
+```bash
+# Mac/Windows (no Terminal/Command Prompt)
+git clone https://github.com/seu-usuario/AvaliaUNB.git
+cd AvaliaUNB
+code .
+```
+
+### 11.3 Configuração do Ambiente
+
+#### Passo 1: Abrir o Terminal no VS Code
+- **Mac**: `Cmd + Shift + `` ` `` ou Terminal > New Terminal
+- **Windows**: `Ctrl + Shift + `` ` `` ou Terminal > New Terminal
+
+#### Passo 2: Verificar Python
+```bash
+# Mac/Windows
+python --version
+# ou
+python3 --version
+
+# Deve retornar Python 3.11+ 
+```
+
+#### Passo 3: Instalar Dependências
+```bash
+# Mac/Windows
+pip install Flask==2.3.3
+pip install Flask-SQLAlchemy==3.0.5
+pip install Flask-WTF==1.1.1
+pip install WTForms==3.0.1
+pip install Werkzeug==2.3.7
+pip install email-validator==2.2.0
+pip install PyMySQL
+
+# Ou instalar tudo de uma vez:
+pip install -r requirements.txt
+```
+
+### 11.4 Configuração do Banco de Dados
+
+#### Opção 1: SQLite (Mais Simples - Recomendado para teste)
+1. O projeto já está configurado para SQLite por padrão
+2. O banco será criado automaticamente na primeira execução
+
+#### Opção 2: MySQL (Para Produção)
+1. **Instalar MySQL**:
+   - **Mac**: `brew install mysql`
+   - **Windows**: Baixar do site oficial MySQL
+
+2. **Criar o banco**:
+   ```sql
+   CREATE DATABASE avaliacao_professores;
+   ```
+
+3. **Alterar configuração no main.py**:
+   ```python
+   # Substituir a linha do SQLite por:
+   app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://usuario:senha@localhost:3306/avaliacao_professores'
+   ```
+
+### 11.5 Executando o Projeto
+
+#### Passo 1: Popular o Banco de Dados
+```bash
+# Mac/Windows (no terminal do VS Code)
+python popular_dados.py
+```
+
+#### Passo 2: Executar a Aplicação
+```bash
+# Mac/Windows
+python main.py
+```
+
+#### Passo 3: Acessar no Navegador
+- Abrir: http://127.0.0.1:5000 ou http://localhost:5000
+
+### 11.6 Configuração do VS Code
+
+#### Configurar o Debugger
+1. Criar arquivo `.vscode/launch.json`:
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Flask",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "FLASK_ENV": "development",
+                "FLASK_DEBUG": "1"
+            }
+        }
+    ]
+}
+```
+
+2. **Executar com Debug**: Pressionar `F5` ou ir em Run > Start Debugging
+
+#### Configurar Tarefas
+1. Criar arquivo `.vscode/tasks.json`:
+```json
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run Flask App",
+            "type": "shell",
+            "command": "python",
+            "args": ["main.py"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Popular Banco",
+            "type": "shell",
+            "command": "python",
+            "args": ["popular_dados.py"],
+            "group": "build"
+        }
+    ]
+}
+```
+
+### 11.7 Estrutura de Arquivos no VS Code
+
+Após a configuração, seu projeto deve ter esta estrutura:
+```
+AvaliaUNB/
+├── .vscode/
+│   ├── launch.json
+│   └── tasks.json
+├── templates/
+│   ├── base.html
+│   ├── index.html
+│   └── ...
+├── instance/
+│   └── avaliacao.db
+├── main.py
+├── models.py
+├── forms.py
+├── popular_dados.py
+├── requirements.txt
+└── stored_procedures.sql
+```
+
+### 11.8 Comandos Úteis
+
+#### Para desenvolvimento:
+```bash
+# Executar com debug
+python main.py
+
+# Popular banco do zero
+python popular_dados.py
+
+# Verificar rotas
+flask routes
+
+# Abrir shell interativo
+flask shell
+```
+
+#### Para resolução de problemas:
+```bash
+# Verificar versão Python
+python --version
+
+# Listar pacotes instalados
+pip list
+
+# Reinstalar dependências
+pip uninstall -r requirements.txt -y
+pip install -r requirements.txt
+```
+
+### 11.9 Extensões Recomendadas do VS Code
+
+1. **Python** (Microsoft) - Essencial
+2. **Pylance** (Microsoft) - Autocomplete avançado
+3. **Flask Snippets** - Snippets para Flask
+4. **SQLite Viewer** - Visualizar banco SQLite
+5. **HTML CSS Support** - Suporte aprimorado para templates
+6. **Jinja** - Syntax highlighting para templates Jinja2
+
+### 11.10 Troubleshooting
+
+#### Problemas Comuns:
+
+**1. "python command not found"**
+- **Mac**: Usar `python3` em vez de `python`
+- **Windows**: Reinstalar Python marcando "Add to PATH"
+
+**2. "Module not found"**
+```bash
+# Reinstalar dependências
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+**3. "Permission denied" (Mac)**
+```bash
+# Usar sudo ou pip --user
+pip install --user -r requirements.txt
+```
+
+**4. "Port already in use"**
+- Alterar porta no main.py:
+```python
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5001)
+```
+
+**5. Banco de dados não cria tabelas**
+```bash
+# Deletar banco e recriar
+rm instance/avaliacao.db
+python popular_dados.py
+```
+
+### 11.11 Diferenças entre Replit e VS Code Local
+
+| Aspecto | Replit | VS Code Local |
+|---------|---------|---------------|
+| **Instalação** | Não necessária | Python + dependências |
+| **Banco** | SQLite automático | Configuração manual |
+| **Debug** | Console web | Debugger integrado |
+| **Colaboração** | Tempo real | Via Git |
+| **Performance** | Limitada | Full local |
+| **Acesso** | Browser anywhere | Local only |
+
+### 11.12 Recomendações de Desenvolvimento
+
+1. **Use Git para versionamento**:
+```bash
+git init
+git add .
+git commit -m "Initial commit"
+```
+
+2. **Configure .gitignore**:
+```
+__pycache__/
+*.pyc
+instance/
+.env
+*.log
+```
+
+3. **Mantenha requirements.txt atualizado**:
+```bash
+pip freeze > requirements.txt
+```
+
+4. **Use variáveis de ambiente para configurações**:
+```python
+import os
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key')
+```
+
+Com este tutorial, você consegue migrar facilmente seu projeto do Replit para um ambiente de desenvolvimento local no VS Code, mantendo todas as funcionalidades e tendo controle total sobre o ambiente de desenvolvimento.
