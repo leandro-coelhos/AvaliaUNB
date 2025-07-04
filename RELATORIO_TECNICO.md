@@ -10,7 +10,7 @@ O sistema AvaliaUNB é uma aplicação web desenvolvida em Flask para gerenciame
 ### 1.1 Tecnologias Utilizadas
 - **Backend**: Python 3.11 com Flask
 - **ORM**: SQLAlchemy
-- **Banco de Dados**: SQLite
+- **Banco de Dados**: SQLite (exclusivamente)
 - **Frontend**: HTML5, CSS3, Bootstrap 5
 - **Autenticação**: Hash de senhas com Werkzeug
 - **Arquivos**: Upload e armazenamento de PDFs em BLOB
@@ -29,7 +29,7 @@ O sistema AvaliaUNB é uma aplicação web desenvolvida em Flask para gerenciame
 ## 2. Camada de Persistência
 
 ### 2.1 Modelo de Dados
-O sistema implementa um modelo relacional complexo baseado no schema MySQL fornecido:
+O sistema implementa um modelo relacional complexo adaptado para SQLite:
 
 #### Tabelas Principais:
 1. **Departamento (Dep)** - Departamentos da universidade
@@ -211,11 +211,11 @@ Embora não implementadas no código atual, o sistema poderia beneficiar-se de v
 - View de ranking de disciplinas
 - View de relatórios por período
 
-## 5. Views SQLite
+## 5. Views e Funcionalidades SQLite
 
-### 5.1 Views Implementadas (Substituindo Stored Procedures)
+### 5.1 Views Implementadas
 
-Como SQLite não suporta stored procedures nativamente, implementamos views para funcionalidades equivalentes:
+O sistema utiliza SQLite exclusivamente com views criadas para otimizar consultas frequentes:
 
 #### View: view_feedbacks_professor
 ```sql
@@ -237,55 +237,47 @@ JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
 JOIN Prof p ON f.pfk_Cod_Prof = p.Cod_Prof;
 ```
 
-#### Procedure: CalcularMediasProfessor
+#### View: view_professores_com_feedbacks
 ```sql
-CREATE PROCEDURE CalcularMediasProfessor(IN professor_id INT)
-BEGIN
-    SELECT f.pfk_Cod_Prof as professor_id,
-           p.Nom_Prof as nome_professor,
-           AVG(f.Qual) as media_qualidade,
-           AVG(f.Nvl_Dif) as media_dificuldade,
-           COUNT(*) as total_feedbacks
-    FROM Fdbk f
-    JOIN Prof p ON f.pfk_Cod_Prof = p.Cod_Prof
-    WHERE f.pfk_Cod_Prof = professor_id
-    GROUP BY f.pfk_Cod_Prof, p.Nom_Prof;
-END
+CREATE VIEW IF NOT EXISTS view_professores_com_feedbacks AS
+SELECT p.Cod_Prof as codigo_professor,
+       p.Nom_Prof as nome_professor,
+       COUNT(f.pfk_Cod_Prof) as total_feedbacks,
+       COALESCE(AVG(f.Qual), 0) as media_qualidade,
+       COALESCE(AVG(f.Nvl_Dif), 0) as media_dificuldade
+FROM Prof p
+LEFT JOIN Fdbk f ON p.Cod_Prof = f.pfk_Cod_Prof
+GROUP BY p.Cod_Prof, p.Nom_Prof
+ORDER BY p.Nom_Prof;
 ```
 
-#### Procedure com Comando Condicional: InserirFeedback
+#### View: view_feedbacks_turma
 ```sql
-CREATE PROCEDURE InserirFeedback(
-    IN p_turma_id INT,
-    IN p_professor_id INT,
-    IN p_usuario_id INT,
-    IN p_nivel_dificuldade INT,
-    IN p_qualidade INT,
-    IN p_comentario VARCHAR(100)
-)
-BEGIN
-    DECLARE feedback_existe INT DEFAULT 0;
-    
-    SELECT COUNT(*) INTO feedback_existe
-    FROM Fdbk
-    WHERE pfk_Num_Idf_Tur = p_turma_id
-    AND pfk_Cod_Prof = p_professor_id
-    AND pfk_Num_Idf_Usr = p_usuario_id;
-    
-    IF feedback_existe = 0 THEN
-        INSERT INTO Fdbk (pfk_Num_Idf_Tur, pfk_Cod_Prof, pfk_Num_Idf_Usr, Nvl_Dif, Qual, Coment)
-        VALUES (p_turma_id, p_professor_id, p_usuario_id, p_nivel_dificuldade, p_qualidade, p_comentario);
-        SELECT 'Feedback inserido com sucesso' as resultado;
-    ELSE
-        SELECT 'Feedback já existe para esta combinação' as resultado;
-    END IF;
-END
+CREATE VIEW IF NOT EXISTS view_feedbacks_turma AS
+SELECT f.pfk_Num_Idf_Tur as turma_id,
+       f.pfk_Cod_Prof as professor_id,
+       f.pfk_Num_Idf_Usr as usuario_id,
+       f.Nvl_Dif as nivel_dificuldade,
+       f.Qual as qualidade,
+       f.Coment as comentario,
+       u.Nom_Usr as nome_usuario,
+       p.Nom_Prof as nome_professor,
+       d.Nom_Dis as nome_disciplina
+FROM Fdbk f
+JOIN Usr u ON f.pfk_Num_Idf_Usr = u.Num_Idf_Usr
+JOIN Prof p ON f.pfk_Cod_Prof = p.Cod_Prof
+JOIN Tur t ON f.pfk_Num_Idf_Tur = t.Num_Idf_Tur
+JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis;
 ```
 
 ### 5.2 Uso das Views no Python
 ```python
+# Consulta usando views SQLite
 resultado = db.session.execute(text("SELECT * FROM view_feedbacks_professor WHERE professor_id = :prof_id"), {"prof_id": professor_id})
 feedbacks_data = resultado.fetchall()
+
+# Consulta de professores com estatísticas
+professores = db.session.execute(text("SELECT * FROM view_professores_com_feedbacks")).fetchall()
 ```
 
 ## 6. Inserção de Dados Binários
@@ -399,10 +391,10 @@ def popular_banco():
 ## 10. Conclusões
 
 ### 10.1 Funcionalidades Implementadas
-✅ **Camada de Persistência**: SQLAlchemy com mapeamento completo
+✅ **Camada de Persistência**: SQLAlchemy com SQLite
 ✅ **CRUD Completo**: Para 7+ tabelas relacionadas
-✅ **Views**: Templates HTML para visualização de dados
-✅ **Stored Procedures**: 5 procedures com comandos condicionais
+✅ **Views**: Templates HTML e views SQLite para visualização
+✅ **Views SQLite**: Views otimizadas para consultas complexas
 ✅ **Dados Binários**: Upload e download de PDFs
 
 ### 10.2 Arquitetura Robusta
@@ -412,9 +404,9 @@ def popular_banco():
 - Sistema de autenticação seguro
 
 ### 10.3 Escalabilidade
-- Preparado para migração MySQL
+- Base sólida em SQLite para desenvolvimento
 - Estrutura modular para expansão
-- Procedures otimizadas para performance
+- Views otimizadas para performance
 - Design responsivo e moderno
 
 O sistema AvaliaUNB representa uma implementação completa e profissional de um sistema de avaliação acadêmica, atendendo a todos os requisitos técnicos especificados com qualidade de código empresarial.
@@ -423,7 +415,12 @@ O sistema AvaliaUNB representa uma implementação completa e profissional de um
 
 ### 11.1 Pré-requisitos
 
-#### Para Mac:
+#### Execução no Replit (Recomendado):
+O projeto está configurado para rodar diretamente no Replit, sem necessidade de instalação local.
+
+#### Para execução local (Opcional):
+
+##### Para Mac:
 1. **Instalar Python 3.11+**:
    ```bash
    # Usando Homebrew (recomendado)
@@ -436,12 +433,7 @@ O sistema AvaliaUNB representa uma implementação completa e profissional de um
    - Baixar de: https://code.visualstudio.com/
    - Instalar a extensão "Python" da Microsoft
 
-3. **Instalar Git**:
-   ```bash
-   brew install git
-   ```
-
-#### Para Windows:
+##### Para Windows:
 1. **Instalar Python 3.11+**:
    - Baixar de: https://www.python.org/downloads/
    - ⚠️ **IMPORTANTE**: Marcar "Add Python to PATH" durante a instalação
@@ -449,9 +441,6 @@ O sistema AvaliaUNB representa uma implementação completa e profissional de um
 2. **Instalar VS Code**:
    - Baixar de: https://code.visualstudio.com/
    - Instalar a extensão "Python" da Microsoft
-
-3. **Instalar Git**:
-   - Baixar de: https://git-scm.com/download/win
 
 ### 11.2 Clonando o Projeto
 
