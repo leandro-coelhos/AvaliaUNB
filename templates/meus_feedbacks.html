@@ -62,7 +62,7 @@
                                            class="btn btn-sm btn-outline-primary">
                                             <i class="fas fa-edit"></i> Editar
                                         </a>
-                                        <form method="POST" action="{{ url_for('excluir_feedback', turma_id=turma.numero_identificacao_turma, professor_id=professor.codigo_professor) }}" style="display: inline;">
+                                        <form method="POST" action="{{ url_for('excluir_feedback', turma_id=turma.numero_identificacao_turma, professor_id=professor.codigo_professor) }}" style="display: inline;" onsubmit="return confirmarExclusao('{{ disciplina.nome_disciplina }}', '{{ turma.numero_identificacao_turma }}', '{{ professor.nome_professor }}');">
                                             <button type="submit" class="btn btn-sm btn-outline-danger">
                                                 <i class="fas fa-trash"></i> Excluir
                                             </button>
@@ -93,4 +93,14 @@
 </div>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<script>
+function confirmarExclusao(disciplina, turma, professor) {
+    return confirm('Tem certeza que deseja excluir seu feedback para:\n\n' + 
+                   'Disciplina: ' + disciplina + '\n' +
+                   'Turma: ' + turma + '\n' +
+                   'Professor: ' + professor + '\n\n' +
+                   'Esta ação não pode ser desfeita.');
+}
+</script>
 {% endblock %}
