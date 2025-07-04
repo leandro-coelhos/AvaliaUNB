@@ -322,6 +322,10 @@ def excluir_feedback(turma_id, professor_id):
 
 @app.route('/professor/<int:professor_id>/feedbacks')
 def feedbacks_detalhes(professor_id):
+    if 'usuario_id' not in session:
+        flash('Você precisa estar logado para ver os feedbacks!', 'warning')
+        return redirect(url_for('login'))
+    
     try:
         resultado = db.session.execute(text("""
         SELECT f.pfk_Num_Idf_Tur as turma_id,
@@ -360,7 +364,7 @@ def feedbacks_detalhes(professor_id):
                              disciplina_codigo=disciplina_codigo)
     except Exception as e:
         flash(f'Erro ao buscar feedbacks: {str(e)}', 'danger')
-        return redirect(url_for('home'))
+        return redirect(url_for('disciplinas'))
 
 @app.route('/turma/<int:turma_id>/feedbacks')
 def feedbacks_turma(turma_id):
