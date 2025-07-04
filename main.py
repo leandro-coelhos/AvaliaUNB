@@ -350,11 +350,6 @@ def feedbacks_detalhes(professor_id):
         flash(f'Erro ao buscar feedbacks: {str(e)}', 'danger')
         return redirect(url_for('disciplinas'))
 
-@app.route('/turmas_avaliadas')
-def turmas_avaliadas():
-    turmas_com_feedbacks = db.session.query(Turma).join(Feedback).distinct().all()
-    return render_template('turmas_avaliadas.html', turmas=turmas_com_feedbacks)
-
 @app.route('/turma/<int:turma_id>/feedbacks')
 def feedbacks_turma(turma_id):
     turma = Turma.query.get_or_404(turma_id)
