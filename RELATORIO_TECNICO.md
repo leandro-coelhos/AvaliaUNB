@@ -10,7 +10,7 @@ O sistema AvaliaUNB é uma aplicação web desenvolvida em Flask para gerenciame
 ### 1.1 Tecnologias Utilizadas
 - **Backend**: Python 3.11 com Flask
 - **ORM**: SQLAlchemy
-- **Banco de Dados**: SQLite (desenvolvimento) / MySQL (produção)
+- **Banco de Dados**: SQLite
 - **Frontend**: HTML5, CSS3, Bootstrap 5
 - **Autenticação**: Hash de senhas com Werkzeug
 - **Arquivos**: Upload e armazenamento de PDFs em BLOB
@@ -211,32 +211,30 @@ Embora não implementadas no código atual, o sistema poderia beneficiar-se de v
 - View de ranking de disciplinas
 - View de relatórios por período
 
-## 5. Stored Procedures
+## 5. Views SQLite
 
-### 5.1 Procedures Implementadas
+### 5.1 Views Implementadas (Substituindo Stored Procedures)
 
-#### Procedure: BuscarFeedbacksProfessor
+Como SQLite não suporta stored procedures nativamente, implementamos views para funcionalidades equivalentes:
+
+#### View: view_feedbacks_professor
 ```sql
-CREATE PROCEDURE BuscarFeedbacksProfessor(IN professor_id INT)
-BEGIN
-    SELECT f.pfk_Num_Idf_Tur as turma_id,
-           f.pfk_Cod_Prof as professor_id,
-           f.pfk_Num_Idf_Usr as usuario_id,
-           f.Nvl_Dif as nivel_dificuldade,
-           f.Qual as qualidade,
-           f.Coment as comentario,
-           u.Nom_Usr as nome_usuario,
-           t.Num_Idf_Tur as numero_turma,
-           d.Nom_Dis as nome_disciplina,
-           p.Nom_Prof as nome_professor
-    FROM Fdbk f
-    JOIN Usr u ON f.pfk_Num_Idf_Usr = u.Num_Idf_Usr
-    JOIN Tur t ON f.pfk_Num_Idf_Tur = t.Num_Idf_Tur
-    JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
-    JOIN Prof p ON f.pfk_Cod_Prof = p.Cod_Prof
-    WHERE f.pfk_Cod_Prof = professor_id
-    ORDER BY t.Num_Idf_Tur;
-END
+CREATE VIEW IF NOT EXISTS view_feedbacks_professor AS
+SELECT f.pfk_Num_Idf_Tur as turma_id,
+       f.pfk_Cod_Prof as professor_id,
+       f.pfk_Num_Idf_Usr as usuario_id,
+       f.Nvl_Dif as nivel_dificuldade,
+       f.Qual as qualidade,
+       f.Coment as comentario,
+       u.Nom_Usr as nome_usuario,
+       t.Num_Idf_Tur as numero_turma,
+       d.Nom_Dis as nome_disciplina,
+       p.Nom_Prof as nome_professor
+FROM Fdbk f
+JOIN Usr u ON f.pfk_Num_Idf_Usr = u.Num_Idf_Usr
+JOIN Tur t ON f.pfk_Num_Idf_Tur = t.Num_Idf_Tur
+JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
+JOIN Prof p ON f.pfk_Cod_Prof = p.Cod_Prof;
 ```
 
 #### Procedure: CalcularMediasProfessor
@@ -284,9 +282,9 @@ BEGIN
 END
 ```
 
-### 5.2 Uso das Procedures no Python
+### 5.2 Uso das Views no Python
 ```python
-resultado = db.session.execute(text("CALL BuscarFeedbacksProfessor(:prof_id)"), {"prof_id": professor_id})
+resultado = db.session.execute(text("SELECT * FROM view_feedbacks_professor WHERE professor_id = :prof_id"), {"prof_id": professor_id})
 feedbacks_data = resultado.fetchall()
 ```
 
@@ -507,21 +505,7 @@ pip install -r requirements.txt
 1. O projeto já está configurado para SQLite por padrão
 2. O banco será criado automaticamente na primeira execução
 
-#### Opção 2: MySQL (Para Produção)
-1. **Instalar MySQL**:
-   - **Mac**: `brew install mysql`
-   - **Windows**: Baixar do site oficial MySQL
-
-2. **Criar o banco**:
-   ```sql
-   CREATE DATABASE avaliacao_professores;
-   ```
-
-3. **Alterar configuração no main.py**:
-   ```python
-   # Substituir a linha do SQLite por:
-   app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://usuario:senha@localhost:3306/avaliacao_professores'
-   ```
+O projeto usa SQLite que é criado automaticamente - não requer configuração adicional de banco de dados.
 
 ### 11.5 Executando o Projeto
 

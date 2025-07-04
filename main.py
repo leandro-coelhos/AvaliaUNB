@@ -70,7 +70,7 @@ def logout():
 @app.route('/professores')
 def professores():
     try:
-        resultado = db.session.execute(text("CALL ListarProfessoresComFeedbacks()"))
+        resultado = db.session.execute(text("SELECT * FROM view_professores_com_feedbacks"))
         professores_data = resultado.fetchall()
         return render_template('professores.html', professores=professores_data)
     except Exception as e:
@@ -226,10 +226,10 @@ def feedbacks_detalhes(professor_id):
     professor = Professor.query.get_or_404(professor_id)
 
     try:
-        resultado_feedbacks = db.session.execute(text("CALL BuscarFeedbacksProfessor(:prof_id)"), {"prof_id": professor_id})
+        resultado_feedbacks = db.session.execute(text("SELECT * FROM view_feedbacks_professor WHERE professor_id = :prof_id"), {"prof_id": professor_id})
         feedbacks_data = resultado_feedbacks.fetchall()
 
-        resultado_medias = db.session.execute(text("CALL CalcularMediasProfessor(:prof_id)"), {"prof_id": professor_id})
+        resultado_medias = db.session.execute(text("SELECT * FROM view_medias_professor WHERE professor_id = :prof_id"), {"prof_id": professor_id})
         medias_data = resultado_medias.fetchone()
 
         if medias_data:
@@ -258,7 +258,7 @@ def feedbacks_turma(turma_id):
     turma = Turma.query.get_or_404(turma_id)
 
     try:
-        resultado = db.session.execute(text("CALL BuscarFeedbacksPorTurma(:turma_id)"), {"turma_id": turma_id})
+        resultado = db.session.execute(text("SELECT * FROM view_feedbacks_turma WHERE turma_id = :turma_id"), {"turma_id": turma_id})
         feedbacks_data = resultado.fetchall()
 
         return render_template('feedbacks_turma.html', 

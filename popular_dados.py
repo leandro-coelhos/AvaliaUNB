@@ -3,6 +3,7 @@ from models import (Departamento, Disciplina, Professor, TipoUsuario,
                    Usuario, PeriodoLetivo, Turma, TipoAvaliacao, 
                    CriterioAvaliacaoTurma, DocumentoAvaliacao, Feedback)
 from werkzeug.security import generate_password_hash
+from sqlalchemy import text
 
 def popular_banco():
     with app.app_context():
@@ -222,6 +223,16 @@ if __name__ == '__main__':
         for feedback in feedbacks_exemplo:
             db.session.add(feedback)
         db.session.commit()
+
+        # Criar views SQLite
+        try:
+            with open('stored_procedures.sql', 'r') as f:
+                sql_views = f.read()
+            db.session.execute(text(sql_views))
+            db.session.commit()
+            print("Views criadas com sucesso!")
+        except Exception as e:
+            print(f"Erro ao criar views: {e}")
 
         print("Banco de dados populado com sucesso!")
 
