@@ -1,7 +1,7 @@
 
 {% extends "base.html" %}
 
-{% block title %}Feedbacks - {{ turma.disciplina.Nom_Dis }} - AvaliaUNB{% endblock %}
+{% block title %}Feedbacks - Professor {{ professor.nome_professor }} - AvaliaUNB{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
@@ -9,10 +9,10 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h2 class="fw-bold">{{ turma.disciplina.Nom_Dis }}</h2>
-                    <h5 class="text-muted">Turma {{ turma.Num_Idf_Tur }} - Professor {{ professor.Nom_Prof }}</h5>
+                    <h2 class="fw-bold">Feedbacks do Professor</h2>
+                    <h5 class="text-muted">{{ professor.nome_professor }}</h5>
                 </div>
-                <a href="{{ url_for('listar_turmas_avaliadas') }}" class="btn btn-outline-primary">
+                <a href="{{ url_for('professores') }}" class="btn btn-outline-primary">
                     <i class="fas fa-arrow-left"></i> Voltar
                 </a>
             </div>
@@ -67,19 +67,21 @@
                                     <div class="row">
                                         <div class="col-md-8">
                                             <h6 class="card-title">
-                                                <i class="fas fa-user-circle"></i> {{ feedback.usuario.Nom_Usr }}
+                                                <i class="fas fa-user-circle"></i> {{ feedback.nome_usuario }}
                                             </h6>
-                                            <p class="card-text">{{ feedback.Coment }}</p>
+                                            <p class="card-text"><strong>Disciplina:</strong> {{ feedback.nome_disciplina }}</p>
+                                            <p class="card-text"><strong>Turma:</strong> {{ feedback.numero_turma }}</p>
+                                            <p class="card-text">{{ feedback.comentario }}</p>
                                         </div>
                                         <div class="col-md-4 text-md-end">
                                             <div class="mb-2">
                                                 <span class="badge bg-primary">
-                                                    <i class="fas fa-star"></i> Qualidade: {{ feedback.Qual }}/5
+                                                    <i class="fas fa-star"></i> Qualidade: {{ feedback.qualidade }}/5
                                                 </span>
                                             </div>
                                             <div>
                                                 <span class="badge bg-secondary">
-                                                    <i class="fas fa-chart-line"></i> Dificuldade: {{ feedback.Nvl_Dif }}/5
+                                                    <i class="fas fa-chart-line"></i> Dificuldade: {{ feedback.nivel_dificuldade }}/5
                                                 </span>
                                             </div>
                                         </div>
@@ -94,7 +96,7 @@
                     <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                     <h4 class="text-muted">Nenhum feedback encontrado</h4>
                     <p class="text-muted">Esta combinação de turma e professor ainda não possui feedbacks.</p>
-                    <a href="{{ url_for('criar_feedback') }}" class="btn btn-primary">
+                    <a href="{{ url_for('feedback') }}" class="btn btn-primary">
                         <i class="fas fa-plus"></i> Criar Primeiro Feedback
                     </a>
                 </div>

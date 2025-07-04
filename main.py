@@ -317,15 +317,18 @@ def feedbacks_detalhes(professor_id):
         if medias_data:
             media_qualidade = round(float(medias_data.media_qualidade), 1)
             media_dificuldade = round(float(medias_data.media_dificuldade), 1)
+            total_feedbacks = medias_data.total_feedbacks
         else:
             media_qualidade = 0
             media_dificuldade = 0
+            total_feedbacks = 0
 
         return render_template('feedbacks_detalhes.html', 
                              professor=professor, 
                              feedbacks=feedbacks_data,
                              media_qualidade=media_qualidade,
-                             media_dificuldade=media_dificuldade)
+                             media_dificuldade=media_dificuldade,
+                             total_feedbacks=total_feedbacks)
     except Exception as e:
         flash(f'Erro ao buscar feedbacks: {str(e)}', 'danger')
         return redirect(url_for('professores'))
