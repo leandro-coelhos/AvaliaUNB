@@ -1,0 +1,144 @@
+
+{% extends "base.html" %}
+
+{% block title %}Meus Reviews - AvaliaUNB{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-neon-cyan">
+                    <span class="neon-icon">📋</span> Meus Reviews
+                </h2>
+                <div class="text-muted">
+                    Professor: {{ professor.nome_professor }}
+                </div>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Estatísticas Gerais -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card feature-card">
+                        <div class="card-body text-center">
+                            <h3 class="text-neon-green">{{ total_feedbacks }}</h3>
+                            <p class="text-neon-cyan">Total de Reviews</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card feature-card">
+                        <div class="card-body text-center">
+                            <h3 class="text-neon-yellow">{{ media_qualidade }}/5</h3>
+                            <p class="text-neon-cyan">Média de Qualidade</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card feature-card">
+                        <div class="card-body text-center">
+                            <h3 class="text-neon-orange">{{ media_dificuldade }}/5</h3>
+                            <p class="text-neon-cyan">Média de Dificuldade</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if disciplinas_stats %}
+                <!-- Estatísticas por Disciplina -->
+                <div class="card feature-card mb-4">
+                    <div class="card-header">
+                        <h4 class="text-neon-pink">📚 Reviews por Disciplina</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% for disciplina, stats in disciplinas_stats.items() %}
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="card-title text-neon-cyan">{{ disciplina }}</h6>
+                                            <p class="card-text">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-comments"></i> {{ stats.total }} review(s)
+                                                </small><br>
+                                                <small class="text-success">
+                                                    <i class="fas fa-star"></i> Qualidade: {{ "%.1f"|format(stats.media_qualidade) }}/5
+                                                </small><br>
+                                                <small class="text-warning">
+                                                    <i class="fas fa-chart-line"></i> Dificuldade: {{ "%.1f"|format(stats.media_dificuldade) }}/5
+                                                </small>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de Feedbacks -->
+                <div class="card feature-card">
+                    <div class="card-header">
+                        <h4 class="text-neon-pink">💬 Comentários dos Alunos</h4>
+                    </div>
+                    <div class="card-body">
+                        {% for feedback in feedbacks %}
+                            <div class="card mb-3" style="border: 1px solid var(--neon-cyan);">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <h6 class="text-neon-green">{{ feedback.nome_disciplina }} - Turma {{ feedback.numero_turma }}</h6>
+                                            <p class="text-neon-cyan">"{{ feedback.comentario }}"</p>
+                                            <small class="text-muted">- {{ feedback.nome_usuario }}</small>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <div class="mb-2">
+                                                <span class="badge 
+                                                    {% if feedback.qualidade <= 2 %}bg-danger
+                                                    {% elif feedback.qualidade <= 3 %}bg-warning
+                                                    {% else %}bg-success{% endif %}">
+                                                    Qualidade: {{ feedback.qualidade }}/5
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <span class="badge 
+                                                    {% if feedback.nivel_dificuldade <= 2 %}bg-success
+                                                    {% elif feedback.nivel_dificuldade <= 3 %}bg-warning
+                                                    {% else %}bg-danger{% endif %}">
+                                                    Dificuldade: {{ feedback.nivel_dificuldade }}/5
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info text-center">
+                    <h4><i class="fas fa-info-circle"></i> Nenhum review encontrado</h4>
+                    <p>Você ainda não recebeu nenhuma avaliação dos alunos.</p>
+                </div>
+            {% endif %}
+
+            <div class="text-center mt-4">
+                <a href="{{ url_for('home') }}" class="btn btn-secondary">Voltar</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}

@@ -47,6 +47,30 @@
                         {% endwith %}
 
                         <div class="mb-3">
+                            {{ form.periodo.label(class="form-label") }}
+                            {{ form.periodo(class="form-select" + (" is-invalid" if form.periodo.errors else ""), id="periodo") }}
+                            {% if form.periodo.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.periodo.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.disciplina.label(class="form-label") }}
+                            {{ form.disciplina(class="form-select" + (" is-invalid" if form.disciplina.errors else ""), id="disciplina") }}
+                            {% if form.disciplina.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.disciplina.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
                             {{ form.turma.label(class="form-label") }}
                             {{ form.turma(class="form-select" + (" is-invalid" if form.turma.errors else ""), id="turma") }}
                             {% if form.turma.errors %}
@@ -157,22 +181,68 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const periodoSelect = document.getElementById('periodo');
+    const disciplinaSelect = document.getElementById('disciplina');
     const turmaSelect = document.getElementById('turma');
     const professorSelect = document.getElementById('professor');
-    const professorGroup = professorSelect.closest('.mb-3');
     
-    // Armazenar as opções originais de professor
+    // Armazenar as opções originais
     const professoresOriginais = Array.from(professorSelect.options);
+    
+    function atualizarTurmas() {
+        const periodoId = periodoSelect.value;
+        const disciplinaCodigo = disciplinaSelect.value;
+        
+        if (!periodoId || !disciplinaCodigo) {
+            turmaSelect.innerHTML = '<option value="">Selecione período e disciplina</option>';
+            professorSelect.innerHTML = '<option value="">Selecione primeiro uma turma</option>';
+            return;
+        }
+        
+        // Desabilitar o select e mostrar loading
+        turmaSelect.disabled = true;
+        turmaSelect.innerHTML = '<option value="">Carregando turmas...</option>';
+        
+        // Fazer requisição para buscar/criar turmas do período e disciplina
+        fetch(`/api/turmas_por_periodo_disciplina/${periodoId}/${disciplinaCodigo}`)
+            .then(response => response.json())
+            .then(data => {
+                turmaSelect.innerHTML = '<option value="">Selecione uma turma</option>';
+                
+                if (data.error) {
+                    console.error('Erro:', data.error);
+                    turmaSelect.innerHTML = '<option value="">Erro ao carregar turmas</option>';
+                    return;
+                }
+                
+                if (data.turmas && data.turmas.length > 0) {
+                    data.turmas.forEach(turma => {
+                        const option = document.createElement('option');
+                        option.value = turma.id;
+                        option.textContent = turma.nome;
+                        turmaSelect.appendChild(option);
+                    });
+                } else {
+                    turmaSelect.innerHTML = '<option value="">Nenhuma turma encontrada</option>';
+                }
+                
+                // Limpar professores quando as turmas mudarem
+                professorSelect.innerHTML = '<option value="">Selecione primeiro uma turma</option>';
+            })
+            .catch(error => {
+                console.error('Erro na requisição:', error);
+                turmaSelect.innerHTML = '<option value="">Erro ao carregar turmas</option>';
+            })
+            .finally(() => {
+                turmaSelect.disabled = false;
+            });
+    }
     
     function atualizarProfessores() {
         const turmaId = turmaSelect.value;
         
         if (!turmaId) {
-            // Se nenhuma turma selecionada, mostrar todos os professores
-            professorSelect.innerHTML = '';
-            professoresOriginais.forEach(option => {
-                professorSelect.appendChild(option.cloneNode(true));
-            });
+            professorSelect.innerHTML = '<option value="">Selecione primeiro uma turma</option>';
             return;
         }
         
@@ -212,12 +282,19 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    // Adicionar evento de mudança na turma
+    // Adicionar eventos de mudança
+    periodoSelect.addEventListener('change', atualizarTurmas);
+    disciplinaSelect.addEventListener('change', atualizarTurmas);
     turmaSelect.addEventListener('change', atualizarProfessores);
     
-    // Se já houver uma turma selecionada ao carregar a página (modo edição), atualizar professores
-    if (turmaSelect.value) {
-        atualizarProfessores();
+    // Se já houver seleções ao carregar a página (modo edição), atualizar
+    if (periodoSelect.value && disciplinaSelect.value) {
+        atualizarTurmas();
+        setTimeout(() => {
+            if (turmaSelect.value) {
+                atualizarProfessores();
+            }
+        }, 100);
     }
 });
 </script>

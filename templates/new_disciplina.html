@@ -1,50 +1,177 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Cadastro de Disciplina</title>
-</head>
-<body>
-    <h1>Cadastrar Disciplina</h1>
 
-    <form method="post">
-        {{ form.hidden_tag() }}
+{% extends "base.html" %}
 
-        <div>
-            {{ form.codigo_disciplina.label }}<br>
-            {{ form.codigo_disciplina(size=30) }}<br>
-            {% for error in form.codigo_disciplina.errors %}
-                <span style="color: red;">{{ error }}</span><br>
-            {% endfor %}
+{% block title %}Nova Disciplina - AvaliaUNB{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <div class="card shadow-lg">
+                <div class="card-header text-center">
+                    <h2 class="fw-bold mb-0">
+                        <i class="fas fa-plus-circle neon-icon" style="color: var(--neon-green);"></i>
+                        Nova Disciplina
+                    </h2>
+                    <p class="mt-2 mb-0" style="color: var(--neon-cyan); font-family: 'Orbitron', monospace;">
+                        Cadastre uma nova disciplina no sistema
+                    </p>
+                </div>
+                
+                <div class="card-body p-4">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="post" class="animate-in">
+                        {{ form.hidden_tag() }}
+
+                        <div class="mb-4">
+                            {{ form.codigo_disciplina.label(class="form-label fw-bold", style="color: var(--neon-pink); font-family: 'Press Start 2P', monospace; font-size: 0.8rem;") }}
+                            {{ form.codigo_disciplina(class="form-control form-control-lg", placeholder="Ex: CIC0004") }}
+                            {% for error in form.codigo_disciplina.errors %}
+                                <div class="text-danger mt-1" style="font-family: 'Orbitron', monospace;">
+                                    <i class="fas fa-exclamation-triangle"></i> {{ error }}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-4">
+                            {{ form.nome_disciplina.label(class="form-label fw-bold", style="color: var(--neon-pink); font-family: 'Press Start 2P', monospace; font-size: 0.8rem;") }}
+                            {{ form.nome_disciplina(class="form-control form-control-lg", placeholder="Ex: Algoritmos e Programação") }}
+                            {% for error in form.nome_disciplina.errors %}
+                                <div class="text-danger mt-1" style="font-family: 'Orbitron', monospace;">
+                                    <i class="fas fa-exclamation-triangle"></i> {{ error }}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-4">
+                            {{ form.departamento.label(class="form-label fw-bold", style="color: var(--neon-pink); font-family: 'Press Start 2P', monospace; font-size: 0.8rem;") }}
+                            {{ form.departamento(class="form-control form-control-lg") }}
+                            {% for error in form.departamento.errors %}
+                                <div class="text-danger mt-1" style="font-family: 'Orbitron', monospace;">
+                                    <i class="fas fa-exclamation-triangle"></i> {{ error }}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-between mt-5">
+                            <a href="{{ url_for('disciplinas') }}" class="btn btn-outline-light me-md-2">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            {{ form.enviar(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card-footer text-center">
+                    <small style="color: var(--neon-cyan); font-family: 'Orbitron', monospace;">
+                        <i class="fas fa-shield-alt"></i> Acesso restrito a administradores
+                    </small>
+                </div>
+            </div>
         </div>
+    </div>
+</div>
 
-        <div>
-            {{ form.departamento.label }}<br>
-            {{ form.departamento() }}<br>
-            {% for error in form.departamento.errors %}
-                <span style="color: red;">{{ error }}</span><br>
-            {% endfor %}
-        </div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-        <div>
-            {{ form.nome_disciplina.label }}<br>
-            {{ form.nome_disciplina(size=50) }}<br>
-            {% for error in form.nome_disciplina.errors %}
-                <span style="color: red;">{{ error }}</span><br>
-            {% endfor %}
-        </div>
-
-        <div>
-            {{ form.periodo.label }}<br>
-            {{ form.periodo() }}<br>
-            {% for error in form.periodo.errors %}
-                <span style="color: red;">{{ error }}</span><br>
-            {% endfor %}
-        </div>
-
-        <div>
-            {{ form.enviar() }}
-        </div>
-    </form>
-</body>
-</html>
+<style>
+    .form-control {
+        transition: all 0.3s ease;
+        border: 2px solid var(--pixel-border);
+        background: var(--darker-bg);
+        color: var(--neon-cyan);
+        font-family: 'Orbitron', monospace;
+    }
+    
+    .form-control:focus {
+        border-color: var(--neon-green);
+        background: var(--darker-bg);
+        color: var(--neon-cyan);
+        box-shadow: 
+            0 0 0 0.2rem rgba(0, 255, 0, 0.25),
+            0 0 20px rgba(0, 255, 0, 0.2);
+    }
+    
+    .form-control::placeholder {
+        color: rgba(0, 255, 255, 0.5);
+        font-style: italic;
+    }
+    
+    .card-header {
+        background: linear-gradient(45deg, var(--darker-bg), var(--dark-bg));
+        border-bottom: 2px solid var(--neon-cyan);
+        position: relative;
+    }
+    
+    .card-header::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, 
+            var(--neon-pink) 0%,
+            var(--neon-cyan) 50%,
+            var(--neon-green) 100%);
+        animation: neon-pulse 2s ease-in-out infinite alternate;
+    }
+    
+    .card-footer {
+        background: var(--darker-bg);
+        border-top: 2px solid var(--neon-purple);
+    }
+    
+    .btn {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s;
+    }
+    
+    .btn:hover::before {
+        left: 100%;
+    }
+    
+    .form-label {
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 0.8rem;
+        display: block;
+    }
+    
+    .animate-in {
+        animation: pixel-slide-up 0.8s ease-out forwards;
+    }
+    
+    @keyframes pixel-slide-up {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}

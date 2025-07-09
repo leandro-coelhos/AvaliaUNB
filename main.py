@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, jsonify
 import io
 from flask_sqlalchemy import SQLAlchemy
-from forms import FormularioLogin, FormularioCadastro, FormularioFeedback
+from forms import FormularioLogin, FormularioCadastro, FormularioFeedback, FormularioDisciplina, FormularioTipoUsuario
 from models import db, Usuario, Professor, Turma, Feedback, Disciplina, TipoUsuario, DocumentoAvaliacao, CriterioAvaliacaoTurma
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import text
@@ -101,36 +101,78 @@ def login():
             session['nome_usuario'] = usuario.nome_usuario
             session['tipo_usuario'] = usuario.fk_codigo_tipo_usuario
             flash('Login realizado com sucesso!', 'success')
-            return redirect(url_for('home'))
+            
+            # Redirecionar professor para página de reviews
+            if usuario.fk_codigo_tipo_usuario == 3:  # Professor
+                return redirect(url_for('meus_reviews'))
+            else:
+                return redirect(url_for('home'))
         else:
             flash('Email ou senha incorretos!', 'danger')
     return render_template('login.html', form=formulario)
 
 @app.route('/cadastro', methods=['GET', 'POST'])
 def cadastro():
-    formulario = FormularioCadastro()
+    from forms import FormularioTipoUsuario
+    
+    # Etapa 1: Seleção do tipo de usuário
+    if 'tipo_usuario_selecionado' not in session:
+        formulario_tipo = FormularioTipoUsuario()
+        if formulario_tipo.validate_on_submit():
+            session['tipo_usuario_selecionado'] = formulario_tipo.tipo_usuario.data
+            return redirect(url_for('cadastro'))
+        return render_template('selecao_tipo_usuario.html', form=formulario_tipo)
+    
+    # Etapa 2: Formulário de cadastro completo
+    tipo_usuario = session['tipo_usuario_selecionado']
+    formulario = FormularioCadastro(tipo_usuario=tipo_usuario)
+    
     if formulario.validate_on_submit():
-        usuario_existente = Usuario.query.filter(
-            (Usuario.email_usuario == formulario.email.data) |
-            (Usuario.matricula_usuario == formulario.matricula.data)
-        ).first()
+        try:
+            # Para professores, usar o código do professor selecionado como matrícula
+            if tipo_usuario == 3:  # Professor
+                if not formulario.professor_existente.data:
+                    flash('Selecione seu perfil de professor!', 'danger')
+                    return render_template('cadastro.html', form=formulario, tipo_usuario=tipo_usuario)
+                matricula = str(formulario.professor_existente.data)
+            else:
+                matricula = formulario.matricula.data
+            
+            # Verificar se usuário já existe
+            usuario_existente = Usuario.query.filter(
+                (Usuario.email_usuario == formulario.email.data) |
+                (Usuario.matricula_usuario == matricula)
+            ).first()
 
-        if usuario_existente:
-            flash('Email ou matrícula já cadastrados!', 'danger')
-        else:
-            novo_usuario = Usuario(
-                nome_usuario=formulario.nome.data,
-                email_usuario=formulario.email.data,
-                telefone_usuario=formulario.telefone.data,
-                matricula_usuario=formulario.matricula.data,
-                senha_usuario=generate_password_hash(formulario.senha.data),
-                fk_codigo_tipo_usuario=formulario.tipo_usuario.data
-            )
-            db.session.add(novo_usuario)
-            db.session.commit()
-            flash('Cadastro realizado com sucesso!', 'success')
-            return redirect(url_for('login'))
-    return render_template('cadastro.html', form=formulario)
+            if usuario_existente:
+                flash('Email ou matrícula já cadastrados!', 'danger')
+            else:
+                novo_usuario = Usuario(
+                    nome_usuario=formulario.nome.data,
+                    email_usuario=formulario.email.data,
+                    telefone_usuario=formulario.telefone.data,
+                    matricula_usuario=matricula,
+                    senha_usuario=generate_password_hash(formulario.senha.data),
+                    fk_codigo_tipo_usuario=tipo_usuario
+                )
+                db.session.add(novo_usuario)
+                db.session.commit()
+                
+                # Limpar sessão
+                session.pop('tipo_usuario_selecionado', None)
+                
+                flash('Cadastro realizado com sucesso! Faça login para acessar sua área.', 'success')
+                return redirect(url_for('login'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao realizar cadastro: {str(e)}', 'danger')
+    
+    return render_template('cadastro.html', form=formulario, tipo_usuario=tipo_usuario)
+
+@app.route('/cadastro/reset')
+def reset_cadastro():
+    session.pop('tipo_usuario_selecionado', None)
+    return redirect(url_for('cadastro'))
 
 @app.route('/logout')
 def logout():
@@ -163,15 +205,13 @@ def create_disciplina():
         flash('Você precisa estar logado como administrador para criar disciplinas!', 'warning')
         return redirect(url_for('login'))
 
-    formulario = FormularioCadastro()
+    formulario = FormularioDisciplina()
 
     if formulario.validate_on_submit():
         nova_disciplina = Disciplina(
-            codigo_disciplina=formulario.codigo.data,
-            nome_disciplina=formulario.nome.data,
-            fk_codigo_departamento=formulario.departamento.data,
-            programa_disciplina=formulario.programa.data,
-            fk_codigo_periodo=formulario.periodo.data
+            codigo_disciplina=formulario.codigo_disciplina.data,
+            nome_disciplina=formulario.nome_disciplina.data,
+            fk_codigo_departamento=formulario.departamento.data
         )
         db.session.add(nova_disciplina)
         db.session.commit()
@@ -180,10 +220,91 @@ def create_disciplina():
 
     return render_template('new_disciplina.html', form=formulario)
 
+@app.route('/api/turmas_por_periodo/<int:periodo_id>')
+def turmas_por_periodo(periodo_id):
+    """Retorna as turmas de um período específico"""
+    try:
+        from models import Turma, Disciplina, PeriodoLetivo
+        
+        # Buscar o período pelo ID para obter o código correto
+        periodo = PeriodoLetivo.query.get(periodo_id)
+        if not periodo:
+            return jsonify({"error": "Período não encontrado"}), 404
+        
+        # Formar o código do período no formato "ano.semestre"
+        periodo_codigo = f"{periodo.ano_periodo}.{periodo.sequencial_periodo}"
+        
+        turmas = db.session.query(Turma, Disciplina).join(
+            Disciplina, Turma.fk_codigo_disciplina == Disciplina.codigo_disciplina
+        ).filter(Turma.fk_codigo_periodo == periodo_codigo).all()
+        
+        turmas_data = [
+            {
+                "id": turma.numero_identificacao_turma,
+                "nome": f"Turma {turma.numero_identificacao_turma} - {disciplina.nome_disciplina}"
+            }
+            for turma, disciplina in turmas
+        ]
+        
+        return jsonify({"turmas": turmas_data})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/turmas_por_periodo_disciplina/<int:periodo_id>/<string:disciplina_codigo>')
+def turmas_por_periodo_disciplina(periodo_id, disciplina_codigo):
+    """Retorna ou cria turmas de uma disciplina em um período específico"""
+    try:
+        from models import Turma, Disciplina, PeriodoLetivo
+        
+        # Buscar o período pelo ID para obter o código correto
+        periodo = PeriodoLetivo.query.get(periodo_id)
+        if not periodo:
+            return jsonify({"error": "Período não encontrado"}), 404
+        
+        # Formar o código do período no formato "ano.semestre"
+        periodo_codigo = f"{periodo.ano_periodo}.{periodo.sequencial_periodo}"
+        
+        # Verificar se a disciplina existe
+        disciplina = Disciplina.query.get(disciplina_codigo)
+        if not disciplina:
+            return jsonify({"error": "Disciplina não encontrada"}), 404
+        
+        # Buscar turmas existentes da disciplina no período
+        turmas_existentes = Turma.query.filter_by(
+            fk_codigo_disciplina=disciplina_codigo,
+            fk_codigo_periodo=periodo_codigo
+        ).all()
+        
+        # Se não houver turmas, criar uma nova
+        if not turmas_existentes:
+            # Buscar o próximo número de turma disponível
+            ultimo_numero = db.session.query(db.func.max(Turma.numero_identificacao_turma)).scalar() or 0
+            nova_turma = Turma(
+                numero_identificacao_turma=ultimo_numero + 1,
+                fk_codigo_disciplina=disciplina_codigo,
+                fk_codigo_periodo=periodo_codigo
+            )
+            db.session.add(nova_turma)
+            db.session.commit()
+            turmas_existentes = [nova_turma]
+        
+        turmas_data = [
+            {
+                "id": turma.numero_identificacao_turma,
+                "nome": f"Turma {turma.numero_identificacao_turma} - {disciplina.nome_disciplina}"
+            }
+            for turma in turmas_existentes
+        ]
+        
+        return jsonify({"turmas": turmas_data})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/professores_por_turma/<int:turma_id>')
 def professores_por_turma(turma_id):
     """Retorna os professores que dão aula em uma turma específica"""
     try:
+        # Primeiro, tentar buscar professores que já deram feedback nesta turma
         resultado = db.session.execute(text("""
         SELECT DISTINCT p.Cod_Prof as codigo_professor,
                p.Nom_Prof as nome_professor
@@ -193,6 +314,15 @@ def professores_por_turma(turma_id):
         ORDER BY p.Nom_Prof
         """), {"turma_id": turma_id})
         professores = resultado.fetchall()
+        
+        # Se não houver professores com feedback, retornar todos os professores
+        if not professores:
+            professores = db.session.execute(text("""
+            SELECT p.Cod_Prof as codigo_professor,
+                   p.Nom_Prof as nome_professor
+            FROM Prof p
+            ORDER BY p.Nom_Prof
+            """)).fetchall()
         
         professores_data = [
             {"codigo": professor.codigo_professor, "nome": professor.nome_professor}
@@ -208,10 +338,15 @@ def feedback():
     if 'usuario_id' not in session:
         flash('Você precisa estar logado para dar feedback!', 'warning')
         return redirect(url_for('login'))
+    
+    # Impedir que professores criem feedbacks
+    if session.get('tipo_usuario') == 3:  # 3 = Professor
+        flash('Professores não podem criar feedbacks. Acesse sua página de reviews para ver as avaliações recebidas.', 'warning')
+        return redirect(url_for('meus_reviews'))
 
     formulario = FormularioFeedback()
     formulario.professor.choices = [(p.codigo_professor, p.nome_professor) for p in Professor.query.all()]
-    formulario.turma.choices = [(t.numero_identificacao_turma, f"Turma {t.numero_identificacao_turma} - {t.disciplina.nome_disciplina}") for t in Turma.query.all()]
+    formulario.turma.choices = []  # Será preenchido dinamicamente via JavaScript
 
     if formulario.validate_on_submit():
         feedback_existente = Feedback.query.filter_by(
@@ -300,7 +435,7 @@ def editar_feedback(turma_id, professor_id):
 
     formulario = FormularioFeedback()
     formulario.professor.choices = [(p.codigo_professor, p.nome_professor) for p in Professor.query.all()]
-    formulario.turma.choices = [(t.numero_identificacao_turma, f"Turma {t.numero_identificacao_turma} - {t.disciplina.nome_disciplina}") for t in Turma.query.all()]
+    formulario.turma.choices = []  # Será preenchido dinamicamente
 
     if formulario.validate_on_submit():
         feedback.nivel_dificuldade = formulario.dificuldade.data
@@ -334,6 +469,11 @@ def editar_feedback(turma_id, professor_id):
         return redirect(url_for('meus_feedbacks'))
 
     if request.method == 'GET':
+        # Buscar o período e disciplina da turma
+        turma = Turma.query.get(feedback.pfk_numero_identificacao_turma)
+        if turma:
+            formulario.periodo.data = turma.fk_codigo_periodo
+            formulario.disciplina.data = turma.fk_codigo_disciplina
         formulario.professor.data = feedback.pfk_codigo_professor
         formulario.turma.data = feedback.pfk_numero_identificacao_turma
         formulario.dificuldade.data = feedback.nivel_dificuldade
@@ -529,6 +669,85 @@ def estatisticas():
         flash(f'Erro ao carregar estatísticas: {str(e)}', 'danger')
         return redirect(url_for('home'))
 
+@app.route('/meus_reviews')
+def meus_reviews():
+    """Página para professores verem seus reviews"""
+    if 'usuario_id' not in session:
+        flash('Você precisa estar logado!', 'warning')
+        return redirect(url_for('login'))
+    
+    if session.get('tipo_usuario') != 3:  # Apenas professores
+        flash('Esta página é exclusiva para professores!', 'warning')
+        return redirect(url_for('home'))
+    
+    try:
+        # Buscar o professor pelo usuário logado
+        usuario = Usuario.query.get(session['usuario_id'])
+        if not usuario:
+            flash('Usuário não encontrado!', 'danger')
+            return redirect(url_for('home'))
+        
+        # Buscar professor pela matrícula do usuário (que corresponde ao código do professor)
+        try:
+            codigo_professor = int(usuario.matricula_usuario)
+            professor = Professor.query.filter_by(codigo_professor=codigo_professor).first()
+            if not professor:
+                flash('Professor não encontrado no sistema!', 'danger')
+                return redirect(url_for('home'))
+        except (ValueError, TypeError):
+            flash('Matrícula de professor inválida!', 'danger')
+            return redirect(url_for('home'))
+        
+        # Usar procedure simulada para buscar feedbacks do professor
+        print(f"Debug: Buscando feedbacks para professor ID: {professor.codigo_professor}, Nome: {professor.nome_professor}")
+        feedbacks_data = ProceduresSimuladas.buscar_feedbacks_professor(professor.codigo_professor)
+        print(f"Debug: Encontrados {len(feedbacks_data)} feedbacks para o professor")
+        
+        # Calcular estatísticas
+        if feedbacks_data:
+            total_feedbacks = len(feedbacks_data)
+            media_qualidade = sum(feedback.qualidade for feedback in feedbacks_data) / total_feedbacks
+            media_dificuldade = sum(feedback.nivel_dificuldade for feedback in feedbacks_data) / total_feedbacks
+            
+            # Agrupar por disciplina
+            disciplinas_stats = {}
+            for feedback in feedbacks_data:
+                disciplina = feedback.nome_disciplina
+                if disciplina not in disciplinas_stats:
+                    disciplinas_stats[disciplina] = {
+                        'total': 0,
+                        'qualidade_sum': 0,
+                        'dificuldade_sum': 0,
+                        'feedbacks': []
+                    }
+                disciplinas_stats[disciplina]['total'] += 1
+                disciplinas_stats[disciplina]['qualidade_sum'] += feedback.qualidade
+                disciplinas_stats[disciplina]['dificuldade_sum'] += feedback.nivel_dificuldade
+                disciplinas_stats[disciplina]['feedbacks'].append(feedback)
+            
+            # Calcular médias por disciplina
+            for disciplina in disciplinas_stats:
+                stats = disciplinas_stats[disciplina]
+                stats['media_qualidade'] = stats['qualidade_sum'] / stats['total']
+                stats['media_dificuldade'] = stats['dificuldade_sum'] / stats['total']
+        else:
+            total_feedbacks = 0
+            media_qualidade = 0
+            media_dificuldade = 0
+            disciplinas_stats = {}
+        
+        return render_template('meus_reviews.html',
+                             professor=professor,
+                             feedbacks=feedbacks_data,
+                             total_feedbacks=total_feedbacks,
+                             media_qualidade=round(media_qualidade, 1) if media_qualidade else 0,
+                             media_dificuldade=round(media_dificuldade, 1) if media_dificuldade else 0,
+                             disciplinas_stats=disciplinas_stats)
+    
+    except Exception as e:
+        flash(f'Erro ao carregar reviews: {str(e)}', 'danger')
+        return redirect(url_for('home'))
+
 @app.route('/api/procedure/ranking')
 def api_ranking_professores():
     """API que demonstra uso de procedure simulada"""
@@ -553,4 +772,4 @@ def api_ranking_professores():
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5009, debug=True)
