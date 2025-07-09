@@ -1,9 +1,9 @@
 
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, PasswordField, SelectField, TextAreaField, IntegerField, SubmitField
+from wtforms import StringField, PasswordField, SelectField, TextAreaField, IntegerField, SubmitField 
 from wtforms.validators import DataRequired, Email, Length, EqualTo, NumberRange
-from models import TipoUsuario
+from models import TipoUsuario, Departamento, PeriodoLetivo
 
 class FormularioLogin(FlaskForm):
     email = StringField('Email', validators=[
@@ -42,7 +42,8 @@ class FormularioCadastro(FlaskForm):
         EqualTo('senha', message='As senhas devem ser iguais')
     ])
     tipo_usuario = SelectField('Tipo de Usuário', coerce=int,
-        choices=[('1', 'Aluno'), ('2', 'Administrador')],
+        choices=[('1', 'Aluno'), ('2', 'Administrador'), ('3', 'Professor'),
+                 ('4', 'Departamento'), ('5', 'Técnico Administrativo')],
         validators=[DataRequired(message='Tipo de usuário é obrigatório')]
     )
     enviar = SubmitField('Cadastrar')
@@ -76,15 +77,42 @@ class FormularioFeedback(FlaskForm):
         DataRequired(message='Comentário é obrigatório'),
         Length(min=1, max=100, message='Comentário deve ter no máximo 100 caracteres')
     ])
-    tipo_documento = SelectField('Tipo de Documento', choices=[
-        ('', 'Selecione o tipo (opcional)'),
-        ('prova', 'Prova'),
-        ('plano_ensino', 'Plano de Ensino'),
-        ('slide', 'Slide/Apresentação'),
-        ('material_apoio', 'Material de Apoio'),
-        ('outro', 'Outro')
+    tipo_avaliacao = SelectField('Tipo de avalição', choices=[
+        (0, 'Selecione o tipo de avaliação'),
+        (1, 'Prova'),
+        (2, 'Trabalho'),
+        (3, 'Plano de Ensino'),
+        (4, 'Projeto'),
+        (5, 'Apresentação')
+    ], validators=[
+        DataRequired(message='Tipo de avaliação é obrigatório')
     ])
     arquivo_pdf = FileField('Documento PDF (opcional)', validators=[
         FileAllowed(['pdf'], 'Apenas arquivos PDF são permitidos!')
     ])
     enviar = SubmitField('Enviar Feedback')
+
+class Disciplina(FlaskForm):
+    codigo_disciplina = StringField('Código da Disciplina', validators=[
+        DataRequired(message='Código da disciplina é obrigatório'),
+        Length(max=10, message='Código deve ter no máximo 10 caracteres')
+    ])
+
+    departamento = SelectField('Departamento', validators=[
+        DataRequired(message='Departamento é obrigatório')
+    ])
+
+    nome_disciplina = StringField('Nome da Disciplina', validators=[
+        DataRequired(message='Nome da disciplina é obrigatório'),
+        Length(max=100, message='Nome deve ter no máximo 100 caracteres')
+    ])
+    
+    periodo = SelectField('Período', coerce=int, validators=[
+        DataRequired(message='Período é obrigatório')
+    ])
+    enviar = SubmitField('Cadastrar Disciplina')
+
+    def __init__(self, *args, **kwargs):
+        super(Disciplina, self).__init__(*args, **kwargs)
+        self.periodo.choices = [(p.codigo_periodo, f"{p.ano_periodo}/{p.sequencial_periodo}") for p in PeriodoLetivo.query.all()]
+        self.departamento.choices = [(d.codigo_departamento, d.nome_departamento) for d in Departamento.query.all()]

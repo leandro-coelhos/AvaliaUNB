@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastro de Disciplina</title>
+</head>
+<body>
+    <h1>Cadastrar Disciplina</h1>
+
+    <form method="post">
+        {{ form.hidden_tag() }}
+
+        <div>
+            {{ form.codigo_disciplina.label }}<br>
+            {{ form.codigo_disciplina(size=30) }}<br>
+            {% for error in form.codigo_disciplina.errors %}
+                <span style="color: red;">{{ error }}</span><br>
+            {% endfor %}
+        </div>
+
+        <div>
+            {{ form.departamento.label }}<br>
+            {{ form.departamento() }}<br>
+            {% for error in form.departamento.errors %}
+                <span style="color: red;">{{ error }}</span><br>
+            {% endfor %}
+        </div>
+
+        <div>
+            {{ form.nome_disciplina.label }}<br>
+            {{ form.nome_disciplina(size=50) }}<br>
+            {% for error in form.nome_disciplina.errors %}
+                <span style="color: red;">{{ error }}</span><br>
+            {% endfor %}
+        </div>
+
+        <div>
+            {{ form.periodo.label }}<br>
+            {{ form.periodo() }}<br>
+            {% for error in form.periodo.errors %}
+                <span style="color: red;">{{ error }}</span><br>
+            {% endfor %}
+        </div>
+
+        <div>
+            {{ form.enviar() }}
+        </div>
+    </form>
+</body>
+</html>

@@ -112,11 +112,11 @@
                         </div>
 
                         <div class="mb-3">
-                            {{ form.tipo_documento.label(class="form-label") }}
-                            {{ form.tipo_documento(class="form-select" + (" is-invalid" if form.tipo_documento.errors else "")) }}
-                            {% if form.tipo_documento.errors %}
+                            {{ form.tipo_avaliacao.label(class="form-label") }}
+                            {{ form.tipo_avaliacao(class="form-select" + (" is-invalid" if form.tipo_avaliacao.errors else "")) }}
+                            {% if form.tipo_avaliacao.errors %}
                                 <div class="invalid-feedback">
-                                    {% for error in form.tipo_documento.errors %}
+                                    {% for error in form.tipo_avaliacao.errors %}
                                         {{ error }}
                                     {% endfor %}
                                 </div>

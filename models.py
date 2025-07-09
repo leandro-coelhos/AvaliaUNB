@@ -53,7 +53,7 @@ class Usuario(db.Model):
 class PeriodoLetivo(db.Model):
     __tablename__ = 'Per_Let'
     
-    codigo_periodo = db.Column('Cod_Per', db.String(10), primary_key=True)
+    codigo_periodo = db.Column('Cod_Per', db.Integer, primary_key=True, autoincrement=True)
     ano_periodo = db.Column('Ano_Per', db.SmallInteger)
     sequencial_periodo = db.Column('Seq_Per', db.SmallInteger)
     

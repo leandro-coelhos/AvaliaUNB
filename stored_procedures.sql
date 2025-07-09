@@ -1,7 +1,3 @@
--- SQLite não suporta stored procedures nativamente
--- Convertendo para views que podem ser consultadas
-
--- View para listar professores com feedbacks
 CREATE VIEW IF NOT EXISTS view_professores_com_feedbacks AS
 SELECT p.Cod_Prof as codigo_professor,
        p.Nom_Prof as nome_professor,

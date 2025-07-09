@@ -106,6 +106,9 @@ def popular_banco():
         tipos_usuario = [
             TipoUsuario(codigo_tipo_usuario=1, nome_tipo_usuario='Aluno'),
             TipoUsuario(codigo_tipo_usuario=2, nome_tipo_usuario='Administrador'),
+            TipoUsuario(codigo_tipo_usuario=3, nome_tipo_usuario='Professor'),
+            TipoUsuario(codigo_tipo_usuario=4, nome_tipo_usuario='Departamento'),
+            TipoUsuario(codigo_tipo_usuario=5, nome_tipo_usuario='Técnico Administrativo'),
         ]
 
         for tipo in tipos_usuario:
@@ -114,10 +117,11 @@ def popular_banco():
 
         # Criar períodos letivos
         periodos = [
-            PeriodoLetivo(codigo_periodo='2023.1', ano_periodo=2023, sequencial_periodo=1),
-            PeriodoLetivo(codigo_periodo='2023.2', ano_periodo=2023, sequencial_periodo=2),
-            PeriodoLetivo(codigo_periodo='2024.1', ano_periodo=2024, sequencial_periodo=1),
-            PeriodoLetivo(codigo_periodo='2024.2', ano_periodo=2024, sequencial_periodo=2),
+            PeriodoLetivo(ano_periodo=2023, sequencial_periodo=1),
+            PeriodoLetivo(ano_periodo=2023, sequencial_periodo=2),
+            PeriodoLetivo(ano_periodo=2024, sequencial_periodo=1),
+            PeriodoLetivo(ano_periodo=2024, sequencial_periodo=2),
+            PeriodoLetivo(ano_periodo=2025, sequencial_periodo=1),
         ]
 
         for periodo in periodos:
@@ -221,8 +225,11 @@ def popular_banco():
 
         # Criar tipos de avaliação
         tipos_avaliacao = [
-            TipoAvaliacao(codigo_tipo_avaliacao=1, nome_tipo_avaliacao='Feedback Geral'),
-            TipoAvaliacao(codigo_tipo_avaliacao=2, nome_tipo_avaliacao='Avaliação Formal'),
+            TipoAvaliacao(codigo_tipo_avaliacao=1, nome_tipo_avaliacao='Prova'),
+            TipoAvaliacao(codigo_tipo_avaliacao=2, nome_tipo_avaliacao='Trabalho'),
+            TipoAvaliacao(codigo_tipo_avaliacao=3, nome_tipo_avaliacao='Plano de Ensino'),
+            TipoAvaliacao(codigo_tipo_avaliacao=4, nome_tipo_avaliacao='Projeto'),
+            TipoAvaliacao(codigo_tipo_avaliacao=5, nome_tipo_avaliacao='Apresentação'),
         ]
 
         for tipo_aval in tipos_avaliacao:

@@ -157,6 +157,29 @@ def professores_por_disciplina(codigo_disciplina):
         flash(f'Erro ao buscar professores da disciplina: {str(e)}', 'danger')
         return redirect(url_for('disciplinas'))
 
+@app.route('/disciplinas/new', methods=['GET', 'POST'])
+def create_disciplina():
+    if 'usuario_id' not in session or session['tipo_usuario'] != 2:  # Apenas administradores
+        flash('Você precisa estar logado como administrador para criar disciplinas!', 'warning')
+        return redirect(url_for('login'))
+
+    formulario = FormularioCadastro()
+
+    if formulario.validate_on_submit():
+        nova_disciplina = Disciplina(
+            codigo_disciplina=formulario.codigo.data,
+            nome_disciplina=formulario.nome.data,
+            fk_codigo_departamento=formulario.departamento.data,
+            programa_disciplina=formulario.programa.data,
+            fk_codigo_periodo=formulario.periodo.data
+        )
+        db.session.add(nova_disciplina)
+        db.session.commit()
+        flash('Disciplina criada com sucesso!', 'success')
+        return redirect(url_for('disciplinas'))
+
+    return render_template('new_disciplina.html', form=formulario)
+
 @app.route('/api/professores_por_turma/<int:turma_id>')
 def professores_por_turma(turma_id):
     """Retorna os professores que dão aula em uma turma específica"""
@@ -211,7 +234,7 @@ def feedback():
             db.session.add(novo_feedback)
             db.session.flush()
 
-            if formulario.arquivo_pdf.data and formulario.tipo_documento.data:
+            if formulario.arquivo_pdf.data and formulario.tipo_avaliacao.data:
                 criterio = CriterioAvaliacaoTurma.query.filter_by(
                     fk_numero_identificacao_turma=formulario.turma.data
                 ).first()
@@ -219,7 +242,7 @@ def feedback():
                 if not criterio:
                     criterio = CriterioAvaliacaoTurma(
                         fk_numero_identificacao_turma=formulario.turma.data,
-                        fk_codigo_tipo_avaliacao=1
+                        fk_codigo_tipo_avaliacao=formulario.tipo_avaliacao.data
                     )
                     db.session.add(criterio)
                     db.session.flush()
@@ -227,7 +250,7 @@ def feedback():
                 arquivo = formulario.arquivo_pdf.data
                 documento = DocumentoAvaliacao(
                     nome_arquivo=arquivo.filename,
-                    tipo_documento=formulario.tipo_documento.data,
+                    tipo_documento=formulario.tipo_avaliacao.data,
                     arquivo_documento=arquivo.read(),
                     fk_numero_identificacao_avaliacao=criterio.numero_identificacao_avaliacao,
                     fk_usuario_id=session['usuario_id'],
@@ -284,7 +307,7 @@ def editar_feedback(turma_id, professor_id):
         feedback.qualidade = formulario.qualidade.data
         feedback.comentario = formulario.comentario.data
 
-        if formulario.arquivo_pdf.data and formulario.tipo_documento.data:
+        if formulario.arquivo_pdf.data and formulario.tipo_avaliacao.data:
             criterio = CriterioAvaliacaoTurma.query.filter_by(
                 fk_numero_identificacao_turma=turma_id
             ).first()
@@ -297,7 +320,7 @@ def editar_feedback(turma_id, professor_id):
             arquivo = formulario.arquivo_pdf.data
             documento = DocumentoAvaliacao(
                 nome_arquivo=arquivo.filename,
-                tipo_documento=formulario.tipo_documento.data,
+                tipo_documento=formulario.tipo_avaliacao.data,
                 arquivo_documento=arquivo.read(),
                 fk_numero_identificacao_avaliacao=criterio.numero_identificacao_avaliacao,
                 fk_usuario_id=session['usuario_id'],
@@ -331,6 +354,14 @@ def excluir_feedback(turma_id, professor_id):
         pfk_numero_identificacao_usuario=session['usuario_id']
     ).first_or_404()
 
+    if feedback:
+        documentos = DocumentoAvaliacao.query.filter_by(
+            fk_numero_identificacao_avaliacao=feedback.pfk_numero_identificacao_turma,
+            fk_professor_id=professor_id,
+            fk_usuario_id=session['usuario_id']
+        ).all()
+        for documento in documentos:
+            db.session.delete(documento)
     db.session.delete(feedback)
     db.session.commit()
     flash('Feedback excluído com sucesso!', 'success')
