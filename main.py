@@ -279,10 +279,26 @@ def turmas_por_periodo_disciplina(periodo_id, disciplina_codigo):
         if not turmas_existentes:
             # Buscar o próximo número de turma disponível
             ultimo_numero = db.session.query(db.func.max(Turma.numero_identificacao_turma)).scalar() or 0
+            
+            # Tentar encontrar um professor comum para essa disciplina
+            professor_comum = db.session.execute(text("""
+            SELECT p.Cod_Prof
+            FROM Prof p
+            JOIN Fdbk f ON p.Cod_Prof = f.pfk_Cod_Prof
+            JOIN Tur t ON f.pfk_Num_Idf_Tur = t.Num_Idf_Tur
+            WHERE t.fk_Cod_Dis = :disciplina_codigo
+            GROUP BY p.Cod_Prof
+            ORDER BY COUNT(*) DESC
+            LIMIT 1
+            """), {"disciplina_codigo": disciplina_codigo}).fetchone()
+            
+            professor_codigo = professor_comum.Cod_Prof if professor_comum else None
+            
             nova_turma = Turma(
                 numero_identificacao_turma=ultimo_numero + 1,
                 fk_codigo_disciplina=disciplina_codigo,
-                fk_codigo_periodo=periodo_codigo
+                fk_codigo_periodo=periodo_codigo,
+                professor_codigo=professor_codigo
             )
             db.session.add(nova_turma)
             db.session.commit()
@@ -304,7 +320,23 @@ def turmas_por_periodo_disciplina(periodo_id, disciplina_codigo):
 def professores_por_turma(turma_id):
     """Retorna os professores que dão aula em uma turma específica"""
     try:
-        # Primeiro, tentar buscar professores que já deram feedback nesta turma
+        # Primeiro, buscar o professor atribuído à turma
+        turma = Turma.query.get(turma_id)
+        if not turma:
+            return jsonify({"error": "Turma não encontrada"}), 404
+        
+        professores_data = []
+        
+        # Se a turma tem professor atribuído, incluí-lo
+        if turma.professor_codigo:
+            professor = Professor.query.get(turma.professor_codigo)
+            if professor:
+                professores_data.append({
+                    "codigo": professor.codigo_professor,
+                    "nome": professor.nome_professor
+                })
+        
+        # Também buscar professores que já deram feedback nesta turma (caso haja outros)
         resultado = db.session.execute(text("""
         SELECT DISTINCT p.Cod_Prof as codigo_professor,
                p.Nom_Prof as nome_professor
@@ -313,21 +345,30 @@ def professores_por_turma(turma_id):
         WHERE f.pfk_Num_Idf_Tur = :turma_id
         ORDER BY p.Nom_Prof
         """), {"turma_id": turma_id})
-        professores = resultado.fetchall()
+        professores_feedback = resultado.fetchall()
         
-        # Se não houver professores com feedback, retornar todos os professores
-        if not professores:
+        # Adicionar professores que não estão na lista mas têm feedback
+        codigos_existentes = {p["codigo"] for p in professores_data}
+        for professor in professores_feedback:
+            if professor.codigo_professor not in codigos_existentes:
+                professores_data.append({
+                    "codigo": professor.codigo_professor,
+                    "nome": professor.nome_professor
+                })
+        
+        # Se não houver nenhum professor, retornar todos os professores como fallback
+        if not professores_data:
             professores = db.session.execute(text("""
             SELECT p.Cod_Prof as codigo_professor,
                    p.Nom_Prof as nome_professor
             FROM Prof p
             ORDER BY p.Nom_Prof
             """)).fetchall()
-        
-        professores_data = [
-            {"codigo": professor.codigo_professor, "nome": professor.nome_professor}
-            for professor in professores
-        ]
+            
+            professores_data = [
+                {"codigo": professor.codigo_professor, "nome": professor.nome_professor}
+                for professor in professores
+            ]
         
         return jsonify({"professores": professores_data})
     except Exception as e:
@@ -345,10 +386,13 @@ def feedback():
         return redirect(url_for('meus_reviews'))
 
     formulario = FormularioFeedback()
-    formulario.professor.choices = [(p.codigo_professor, p.nome_professor) for p in Professor.query.all()]
-    formulario.turma.choices = []  # Será preenchido dinamicamente via JavaScript
 
     if formulario.validate_on_submit():
+        # Validar se todos os campos obrigatórios estão preenchidos
+        if not formulario.periodo.data or not formulario.disciplina.data or not formulario.turma.data or not formulario.professor.data:
+            flash('Preencha todos os campos obrigatórios!', 'danger')
+            return render_template('feedback.html', form=formulario)
+            
         feedback_existente = Feedback.query.filter_by(
             pfk_numero_identificacao_turma=formulario.turma.data,
             pfk_codigo_professor=formulario.professor.data,
@@ -358,45 +402,50 @@ def feedback():
         if feedback_existente:
             flash('Você já avaliou este professor nesta turma!', 'warning')
         else:
-            novo_feedback = Feedback(
-                pfk_numero_identificacao_turma=formulario.turma.data,
-                pfk_codigo_professor=formulario.professor.data,
-                pfk_numero_identificacao_usuario=session['usuario_id'],
-                nivel_dificuldade=formulario.dificuldade.data,
-                qualidade=formulario.qualidade.data,
-                comentario=formulario.comentario.data
-            )
-            db.session.add(novo_feedback)
-            db.session.flush()
-
-            if formulario.arquivo_pdf.data and formulario.tipo_avaliacao.data:
-                criterio = CriterioAvaliacaoTurma.query.filter_by(
-                    fk_numero_identificacao_turma=formulario.turma.data
-                ).first()
-
-                if not criterio:
-                    criterio = CriterioAvaliacaoTurma(
-                        fk_numero_identificacao_turma=formulario.turma.data,
-                        fk_codigo_tipo_avaliacao=formulario.tipo_avaliacao.data
-                    )
-                    db.session.add(criterio)
-                    db.session.flush()
-
-                arquivo = formulario.arquivo_pdf.data
-                documento = DocumentoAvaliacao(
-                    nome_arquivo=arquivo.filename,
-                    tipo_documento=formulario.tipo_avaliacao.data,
-                    arquivo_documento=arquivo.read(),
-                    fk_numero_identificacao_avaliacao=criterio.numero_identificacao_avaliacao,
-                    fk_usuario_id=session['usuario_id'],
-                    fk_professor_id=formulario.professor.data,
-                    fk_turma_id=formulario.turma.data
+            try:
+                novo_feedback = Feedback(
+                    pfk_numero_identificacao_turma=formulario.turma.data,
+                    pfk_codigo_professor=formulario.professor.data,
+                    pfk_numero_identificacao_usuario=session['usuario_id'],
+                    nivel_dificuldade=formulario.dificuldade.data,
+                    qualidade=formulario.qualidade.data,
+                    comentario=formulario.comentario.data
                 )
-                db.session.add(documento)
+                db.session.add(novo_feedback)
+                db.session.flush()
 
-            db.session.commit()
-            flash('Feedback enviado com sucesso!', 'success')
-            return redirect(url_for('home'))
+                # Processar documento se fornecido
+                if formulario.arquivo_pdf.data and formulario.tipo_avaliacao.data:
+                    criterio = CriterioAvaliacaoTurma.query.filter_by(
+                        fk_numero_identificacao_turma=formulario.turma.data
+                    ).first()
+
+                    if not criterio:
+                        criterio = CriterioAvaliacaoTurma(
+                            fk_numero_identificacao_turma=formulario.turma.data,
+                            fk_codigo_tipo_avaliacao=formulario.tipo_avaliacao.data
+                        )
+                        db.session.add(criterio)
+                        db.session.flush()
+
+                    arquivo = formulario.arquivo_pdf.data
+                    documento = DocumentoAvaliacao(
+                        nome_arquivo=arquivo.filename,
+                        tipo_documento=str(formulario.tipo_avaliacao.data),
+                        arquivo_documento=arquivo.read(),
+                        fk_numero_identificacao_avaliacao=criterio.numero_identificacao_avaliacao,
+                        fk_usuario_id=session['usuario_id'],
+                        fk_professor_id=formulario.professor.data,
+                        fk_turma_id=formulario.turma.data
+                    )
+                    db.session.add(documento)
+
+                db.session.commit()
+                flash('Feedback enviado com sucesso!', 'success')
+                return redirect(url_for('home'))
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao enviar feedback: {str(e)}', 'danger')
 
     return render_template('feedback.html', form=formulario)
 
@@ -668,6 +717,243 @@ def estatisticas():
     except Exception as e:
         flash(f'Erro ao carregar estatísticas: {str(e)}', 'danger')
         return redirect(url_for('home'))
+
+# ========== ROTAS ADMINISTRATIVAS ==========
+
+@app.route('/admin/professores')
+def admin_professores():
+    """Página de gerenciamento de professores"""
+    if 'usuario_id' not in session or session.get('tipo_usuario') != 2:
+        flash('Acesso restrito a administradores!', 'warning')
+        return redirect(url_for('home'))
+    
+    professores = Professor.query.order_by(Professor.nome_professor).all()
+    return render_template('admin_professores.html', professores=professores)
+
+@app.route('/admin/professores/novo', methods=['GET', 'POST'])
+def admin_novo_professor():
+    """Criar novo professor"""
+    if 'usuario_id' not in session or session.get('tipo_usuario') != 2:
+        flash('Acesso restrito a administradores!', 'warning')
+        return redirect(url_for('home'))
+    
+    from forms import FormularioProfessor
+    formulario = FormularioProfessor()
+    
+    if formulario.validate_on_submit():
+        novo_professor = Professor(
+            codigo_professor=formulario.codigo_professor.data,
+            nome_professor=formulario.nome_professor.data
+        )
+        db.session.add(novo_professor)
+        db.session.commit()
+        flash('Professor criado com sucesso!', 'success')
+        return redirect(url_for('admin_professores'))
+    
+    return render_template('admin_form_professor.html', form=formulario, titulo='Novo Professor')
+
+@app.route('/admin/professores/<int:codigo_professor>/editar', methods=['GET', 'POST'])
+def admin_editar_professor(codigo_professor):
+    """Editar professor existente"""
+    if 'usuario_id' not in session or session.get('tipo_usuario') != 2:
+        flash('Acesso restrito a administradores!', 'warning')
+        return redirect(url_for('home'))
+    
+    professor = Professor.query.get_or_404(codigo_professor)
+    from forms import FormularioProfessor
+    formulario = FormularioProfessor(obj=professor)
+    
+    if formulario.validate_on_submit():
+        professor.nome_professor = formulario.nome_professor.data
+        db.session.commit()
+        flash('Professor atualizado com sucesso!', 'success')
+        return redirect(url_for('admin_professores'))
+    
+    return render_template('admin_form_professor.html', form=formulario, titulo='Editar Professor', professor=professor)
+
+@app.route('/admin/professores/<int:codigo_professor>/excluir', methods=['POST'])
+def admin_excluir_professor(codigo_professor):
+    """Excluir professor"""
+    if 'usuario_id' not in session or session.get('tipo_usuario') != 2:
+        flash('Acesso restrito a administradores!', 'warning')
+        return redirect(url_for('home'))
+    
+    professor = Professor.query.get_or_404(codigo_professor)
+    
+    # Verificar se professor tem feedbacks
+    feedbacks = Feedback.query.filter_by(pfk_codigo_professor=codigo_professor).first()
+    if feedbacks:
+        flash('Não é possível excluir professor que possui feedbacks!', 'danger')
+        return redirect(url_for('admin_professores'))
+    
+    db.session.delete(professor)
+    db.session.commit()
+    flash('Professor excluído com sucesso!', 'success')
+    return redirect(url_for('admin_professores'))
+
+@app.route('/admin/disciplinas')
+def admin_disciplinas():
+    """Página de gerenciamento de disciplinas"""
+    if 'usuario_id' not in session or session.get('tipo_usuario') != 2:
+        flash('Acesso restrito a administradores!', 'warning')
+        return redirect(url_for('home'))
+    
+    disciplinas = Disciplina.query.order_by(Disciplina.nome_disciplina).all()
+    return render_template('admin_disciplinas.html', disciplinas=disciplinas)
+
+@app.route('/admin/disciplinas/nova', methods=['GET', 'POST'])
+def admin_nova_disciplina():
+    """Criar nova disciplina"""
+    if 'usuario_id' not in session or session.get('tipo_usuario') != 2:
+        flash('Acesso restrito a administradores!', 'warning')
+        return redirect(url_for('home'))
+    
+    formulario = FormularioDisciplina()
+    
+    if formulario.validate_on_submit():
+        nova_disciplina = Disciplina(
+            codigo_disciplina=formulario.codigo_disciplina.data,
+            nome_disciplina=formulario.nome_disciplina.data,
+            fk_codigo_departamento=formulario.departamento.data
+        )
+        db.session.add(nova_disciplina)
+        db.session.commit()
+        flash('Disciplina criada com sucesso!', 'success')
+        return redirect(url_for('admin_disciplinas'))
+    
+    return render_template('admin_form_disciplina.html', form=formulario, titulo='Nova Disciplina')
+
+@app.route('/admin/disciplinas/<string:codigo_disciplina>/editar', methods=['GET', 'POST'])
+def admin_editar_disciplina(codigo_disciplina):
+    """Editar disciplina existente"""
+    if 'usuario_id' not in session or session.get('tipo_usuario') != 2:
+        flash('Acesso restrito a administradores!', 'warning')
+        return redirect(url_for('home'))
+    
+    disciplina = Disciplina.query.get_or_404(codigo_disciplina)
+    formulario = FormularioDisciplina(obj=disciplina)
+    
+    if formulario.validate_on_submit():
+        disciplina.nome_disciplina = formulario.nome_disciplina.data
+        disciplina.fk_codigo_departamento = formulario.departamento.data
+        db.session.commit()
+        flash('Disciplina atualizada com sucesso!', 'success')
+        return redirect(url_for('admin_disciplinas'))
+    
+    return render_template('admin_form_disciplina.html', form=formulario, titulo='Editar Disciplina', disciplina=disciplina)
+
+@app.route('/admin/disciplinas/<string:codigo_disciplina>/excluir', methods=['POST'])
+def admin_excluir_disciplina(codigo_disciplina):
+    """Excluir disciplina"""
+    if 'usuario_id' not in session or session.get('tipo_usuario') != 2:
+        flash('Acesso restrito a administradores!', 'warning')
+        return redirect(url_for('home'))
+    
+    disciplina = Disciplina.query.get_or_404(codigo_disciplina)
+    
+    # Verificar se disciplina tem turmas
+    turmas = Turma.query.filter_by(fk_codigo_disciplina=codigo_disciplina).first()
+    if turmas:
+        flash('Não é possível excluir disciplina que possui turmas!', 'danger')
+        return redirect(url_for('admin_disciplinas'))
+    
+    db.session.delete(disciplina)
+    db.session.commit()
+    flash('Disciplina excluída com sucesso!', 'success')
+    return redirect(url_for('admin_disciplinas'))
+
+@app.route('/admin/turmas')
+def admin_turmas():
+    """Página de gerenciamento de turmas"""
+    if 'usuario_id' not in session or session.get('tipo_usuario') != 2:
+        flash('Acesso restrito a administradores!', 'warning')
+        return redirect(url_for('home'))
+    
+    # Buscar relações professor-turma baseadas exclusivamente nos feedbacks
+    resultado = db.session.execute(text("""
+    SELECT DISTINCT 
+           t.Num_Idf_Tur as numero_identificacao_turma,
+           t.fk_Cod_Dis as fk_codigo_disciplina,
+           t.fk_Cod_Per as fk_codigo_periodo,
+           f.pfk_Cod_Prof as professor_codigo,
+           d.Nom_Dis as nome_disciplina,
+           p.Nom_Prof as nome_professor,
+           COUNT(f.pfk_Num_Idf_Usr) as total_feedbacks_recebidos
+    FROM Tur t
+    JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
+    JOIN Fdbk f ON t.Num_Idf_Tur = f.pfk_Num_Idf_Tur
+    JOIN Prof p ON f.pfk_Cod_Prof = p.Cod_Prof
+    GROUP BY t.Num_Idf_Tur, t.fk_Cod_Dis, t.fk_Cod_Per, f.pfk_Cod_Prof, d.Nom_Dis, p.Nom_Prof
+    ORDER BY t.Num_Idf_Tur, p.Nom_Prof
+    """))
+    turmas_data = resultado.fetchall()
+    
+    return render_template('admin_turmas.html', turmas=turmas_data)
+
+@app.route('/admin/turmas/nova', methods=['GET', 'POST'])
+def admin_nova_turma():
+    """Criar nova turma"""
+    if 'usuario_id' not in session or session.get('tipo_usuario') != 2:
+        flash('Acesso restrito a administradores!', 'warning')
+        return redirect(url_for('home'))
+    
+    from forms import FormularioTurma
+    formulario = FormularioTurma()
+    
+    if formulario.validate_on_submit():
+        nova_turma = Turma(
+            numero_identificacao_turma=formulario.numero_identificacao_turma.data,
+            fk_codigo_disciplina=formulario.disciplina.data,
+            fk_codigo_periodo=formulario.periodo.data,
+            professor_codigo=formulario.professor.data if formulario.professor.data else None
+        )
+        db.session.add(nova_turma)
+        db.session.commit()
+        flash('Turma criada com sucesso!', 'success')
+        return redirect(url_for('admin_turmas'))
+    
+    return render_template('admin_form_turma.html', form=formulario, titulo='Nova Turma')
+
+@app.route('/admin/turmas/<int:numero_turma>/editar', methods=['GET', 'POST'])
+def admin_editar_turma(numero_turma):
+    """Editar turma existente"""
+    if 'usuario_id' not in session or session.get('tipo_usuario') != 2:
+        flash('Acesso restrito a administradores!', 'warning')
+        return redirect(url_for('home'))
+    
+    turma = Turma.query.get_or_404(numero_turma)
+    from forms import FormularioTurma
+    formulario = FormularioTurma(obj=turma)
+    
+    if formulario.validate_on_submit():
+        turma.fk_codigo_disciplina = formulario.disciplina.data
+        turma.fk_codigo_periodo = formulario.periodo.data
+        turma.professor_codigo = formulario.professor.data if formulario.professor.data else None
+        db.session.commit()
+        flash('Turma atualizada com sucesso!', 'success')
+        return redirect(url_for('admin_turmas'))
+    
+    return render_template('admin_form_turma.html', form=formulario, titulo='Editar Turma', turma=turma)
+
+@app.route('/admin/turmas/<int:numero_turma>/excluir', methods=['POST'])
+def admin_excluir_turma(numero_turma):
+    """Excluir turma"""
+    if 'usuario_id' not in session or session.get('tipo_usuario') != 2:
+        flash('Acesso restrito a administradores!', 'warning')
+        return redirect(url_for('home'))
+    
+    turma = Turma.query.get_or_404(numero_turma)
+    
+    # Verificar se turma tem feedbacks
+    feedbacks = Feedback.query.filter_by(pfk_numero_identificacao_turma=numero_turma).first()
+    if feedbacks:
+        flash('Não é possível excluir turma que possui feedbacks!', 'danger')
+        return redirect(url_for('admin_turmas'))
+    
+    db.session.delete(turma)
+    db.session.commit()
+    flash('Turma excluída com sucesso!', 'success')
+    return redirect(url_for('admin_turmas'))
 
 @app.route('/meus_reviews')
 def meus_reviews():

@@ -99,15 +99,13 @@ class FormularioFeedback(FlaskForm):
         DataRequired(message='Comentário é obrigatório'),
         Length(min=1, max=100, message='Comentário deve ter no máximo 100 caracteres')
     ])
-    tipo_avaliacao = SelectField('Tipo de avalição', choices=[
-        (0, 'Selecione o tipo de avaliação'),
+    tipo_avaliacao = SelectField('Tipo de avaliação', coerce=int, choices=[
+        ('', 'Selecione o tipo de avaliação'),
         (1, 'Prova'),
         (2, 'Trabalho'),
         (3, 'Plano de Ensino'),
         (4, 'Projeto'),
         (5, 'Apresentação')
-    ], validators=[
-        DataRequired(message='Tipo de avaliação é obrigatório')
     ])
     arquivo_pdf = FileField('Documento PDF (opcional)', validators=[
         FileAllowed(['pdf'], 'Apenas arquivos PDF são permitidos!')
@@ -116,14 +114,24 @@ class FormularioFeedback(FlaskForm):
     
     def __init__(self, *args, **kwargs):
         super(FormularioFeedback, self).__init__(*args, **kwargs)
-        from models import PeriodoLetivo, Disciplina
-        # Ordenar períodos por ano e sequencial (mais recente primeiro)
-        periodos_ordenados = PeriodoLetivo.query.order_by(PeriodoLetivo.ano_periodo.desc(), PeriodoLetivo.sequencial_periodo.desc()).all()
-        self.periodo.choices = [(p.codigo_periodo, f"{p.ano_periodo}.{p.sequencial_periodo}") for p in periodos_ordenados]
+        from models import PeriodoLetivo, Disciplina, Professor
         
-        # Carregar todas as disciplinas
-        disciplinas_ordenadas = Disciplina.query.order_by(Disciplina.nome_disciplina).all()
-        self.disciplina.choices = [(d.codigo_disciplina, f"{d.codigo_disciplina} - {d.nome_disciplina}") for d in disciplinas_ordenadas]
+        # Inicializar choices vazias (serão preenchidas via AJAX)
+        self.periodo.choices = [('', 'Carregando períodos...')]
+        self.disciplina.choices = [('', 'Carregando disciplinas...')]
+        self.professor.choices = [('', 'Selecione primeiro uma turma')]
+        self.turma.choices = [('', 'Selecione período e disciplina primeiro')]
+        
+        # Carregar dados se estiver disponível
+        try:
+            periodos_ordenados = PeriodoLetivo.query.order_by(PeriodoLetivo.ano_periodo.desc(), PeriodoLetivo.sequencial_periodo.desc()).all()
+            self.periodo.choices = [('', 'Selecione um período')] + [(p.codigo_periodo, f"{p.ano_periodo}.{p.sequencial_periodo}") for p in periodos_ordenados]
+            
+            disciplinas_ordenadas = Disciplina.query.order_by(Disciplina.nome_disciplina).all()
+            self.disciplina.choices = [('', 'Selecione uma disciplina')] + [(d.codigo_disciplina, f"{d.codigo_disciplina} - {d.nome_disciplina}") for d in disciplinas_ordenadas]
+        except:
+            # Em caso de erro, manter choices vazias
+            pass
 
 class FormularioDisciplina(FlaskForm):
     codigo_disciplina = StringField('Código da Disciplina', validators=[
@@ -145,3 +153,44 @@ class FormularioDisciplina(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(FormularioDisciplina, self).__init__(*args, **kwargs)
         self.departamento.choices = [(d.codigo_departamento, d.nome_departamento) for d in Departamento.query.all()]
+
+class FormularioProfessor(FlaskForm):
+    codigo_professor = IntegerField('Código do Professor', validators=[
+        DataRequired(message='Código do professor é obrigatório'),
+        NumberRange(min=1, message='Código deve ser um número positivo')
+    ])
+    nome_professor = StringField('Nome do Professor', validators=[
+        DataRequired(message='Nome do professor é obrigatório'),
+        Length(min=2, max=25, message='Nome deve ter entre 2 e 25 caracteres')
+    ])
+    enviar = SubmitField('Salvar Professor')
+
+class FormularioTurma(FlaskForm):
+    numero_identificacao_turma = IntegerField('Número da Turma', validators=[
+        DataRequired(message='Número da turma é obrigatório'),
+        NumberRange(min=1, message='Número deve ser um número positivo')
+    ])
+    disciplina = SelectField('Disciplina', coerce=str, validators=[
+        DataRequired(message='Disciplina é obrigatória')
+    ])
+    periodo = SelectField('Período', coerce=str, validators=[
+        DataRequired(message='Período é obrigatório')
+    ])
+    professor = SelectField('Professor (opcional)', coerce=int, validators=[])
+    enviar = SubmitField('Salvar Turma')
+    
+    def __init__(self, *args, **kwargs):
+        super(FormularioTurma, self).__init__(*args, **kwargs)
+        from models import Disciplina, PeriodoLetivo, Professor
+        
+        # Carregar disciplinas
+        disciplinas = Disciplina.query.order_by(Disciplina.nome_disciplina).all()
+        self.disciplina.choices = [(d.codigo_disciplina, f"{d.codigo_disciplina} - {d.nome_disciplina}") for d in disciplinas]
+        
+        # Carregar períodos
+        periodos = PeriodoLetivo.query.order_by(PeriodoLetivo.ano_periodo.desc(), PeriodoLetivo.sequencial_periodo.desc()).all()
+        self.periodo.choices = [(f"{p.ano_periodo}.{p.sequencial_periodo}", f"{p.ano_periodo}.{p.sequencial_periodo}") for p in periodos]
+        
+        # Carregar professores (opcional)
+        professores = Professor.query.order_by(Professor.nome_professor).all()
+        self.professor.choices = [('', 'Nenhum professor selecionado')] + [(p.codigo_professor, p.nome_professor) for p in professores]

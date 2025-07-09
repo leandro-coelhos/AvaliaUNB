@@ -186,34 +186,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const turmaSelect = document.getElementById('turma');
     const professorSelect = document.getElementById('professor');
     
-    // Armazenar as opções originais
-    const professoresOriginais = Array.from(professorSelect.options);
-    
     function atualizarTurmas() {
         const periodoId = periodoSelect.value;
         const disciplinaCodigo = disciplinaSelect.value;
         
+        // Limpar seleções dependentes
+        turmaSelect.innerHTML = '<option value="">Selecione uma turma</option>';
+        professorSelect.innerHTML = '<option value="">Selecione primeiro uma turma</option>';
+        
         if (!periodoId || !disciplinaCodigo) {
-            turmaSelect.innerHTML = '<option value="">Selecione período e disciplina</option>';
-            professorSelect.innerHTML = '<option value="">Selecione primeiro uma turma</option>';
             return;
         }
         
-        // Desabilitar o select e mostrar loading
         turmaSelect.disabled = true;
         turmaSelect.innerHTML = '<option value="">Carregando turmas...</option>';
         
-        // Fazer requisição para buscar/criar turmas do período e disciplina
         fetch(`/api/turmas_por_periodo_disciplina/${periodoId}/${disciplinaCodigo}`)
             .then(response => response.json())
             .then(data => {
                 turmaSelect.innerHTML = '<option value="">Selecione uma turma</option>';
-                
-                if (data.error) {
-                    console.error('Erro:', data.error);
-                    turmaSelect.innerHTML = '<option value="">Erro ao carregar turmas</option>';
-                    return;
-                }
                 
                 if (data.turmas && data.turmas.length > 0) {
                     data.turmas.forEach(turma => {
@@ -223,14 +214,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         turmaSelect.appendChild(option);
                     });
                 } else {
-                    turmaSelect.innerHTML = '<option value="">Nenhuma turma encontrada</option>';
+                    turmaSelect.innerHTML = '<option value="">Nenhuma turma disponível</option>';
                 }
-                
-                // Limpar professores quando as turmas mudarem
-                professorSelect.innerHTML = '<option value="">Selecione primeiro uma turma</option>';
             })
             .catch(error => {
-                console.error('Erro na requisição:', error);
+                console.error('Erro:', error);
                 turmaSelect.innerHTML = '<option value="">Erro ao carregar turmas</option>';
             })
             .finally(() => {
@@ -241,26 +229,19 @@ document.addEventListener('DOMContentLoaded', function() {
     function atualizarProfessores() {
         const turmaId = turmaSelect.value;
         
+        professorSelect.innerHTML = '<option value="">Selecione um professor</option>';
+        
         if (!turmaId) {
-            professorSelect.innerHTML = '<option value="">Selecione primeiro uma turma</option>';
             return;
         }
         
-        // Desabilitar o select e mostrar loading
         professorSelect.disabled = true;
         professorSelect.innerHTML = '<option value="">Carregando professores...</option>';
         
-        // Fazer requisição para buscar professores da turma
         fetch(`/api/professores_por_turma/${turmaId}`)
             .then(response => response.json())
             .then(data => {
                 professorSelect.innerHTML = '<option value="">Selecione um professor</option>';
-                
-                if (data.error) {
-                    console.error('Erro:', data.error);
-                    professorSelect.innerHTML = '<option value="">Erro ao carregar professores</option>';
-                    return;
-                }
                 
                 if (data.professores && data.professores.length > 0) {
                     data.professores.forEach(professor => {
@@ -270,11 +251,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         professorSelect.appendChild(option);
                     });
                 } else {
-                    professorSelect.innerHTML = '<option value="">Nenhum professor encontrado para esta turma</option>';
+                    professorSelect.innerHTML = '<option value="">Nenhum professor encontrado</option>';
                 }
             })
             .catch(error => {
-                console.error('Erro na requisição:', error);
+                console.error('Erro:', error);
                 professorSelect.innerHTML = '<option value="">Erro ao carregar professores</option>';
             })
             .finally(() => {
@@ -282,19 +263,19 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    // Adicionar eventos de mudança
+    // Eventos
     periodoSelect.addEventListener('change', atualizarTurmas);
     disciplinaSelect.addEventListener('change', atualizarTurmas);
     turmaSelect.addEventListener('change', atualizarProfessores);
     
-    // Se já houver seleções ao carregar a página (modo edição), atualizar
+    // Inicialização para modo edição
     if (periodoSelect.value && disciplinaSelect.value) {
         atualizarTurmas();
         setTimeout(() => {
             if (turmaSelect.value) {
                 atualizarProfessores();
             }
-        }, 100);
+        }, 500);
     }
 });
 </script>

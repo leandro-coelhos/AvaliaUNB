@@ -76,6 +76,7 @@
                 0 0 20px var(--neon-cyan),
                 inset 0 1px 0 rgba(0, 255, 255, 0.2);
             position: relative;
+            z-index: 1000;
         }
 
         .navbar::after {
@@ -556,6 +557,54 @@
                 linear-gradient(45deg, var(--neon-cyan), var(--neon-pink), var(--neon-green)) 1;
         }
 
+        /* Dropdown styling */
+        .dropdown-menu {
+            background: var(--darker-bg) !important;
+            border: 2px solid var(--neon-cyan) !important;
+            border-radius: 0 !important;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3) !important;
+            z-index: 9999 !important;
+            position: absolute !important;
+        }
+
+        .dropdown-item {
+            color: var(--neon-cyan) !important;
+            font-family: 'Orbitron', monospace !important;
+            font-weight: 600 !important;
+            padding: 12px 20px !important;
+            transition: all 0.3s ease !important;
+            border: none !important;
+            background: transparent !important;
+        }
+
+        .dropdown-item:hover,
+        .dropdown-item:focus {
+            background: var(--neon-cyan) !important;
+            color: var(--dark-bg) !important;
+            text-shadow: none !important;
+        }
+
+        .dropdown-toggle::after {
+            border-top: 0.3em solid var(--neon-cyan);
+            border-right: 0.3em solid transparent;
+            border-bottom: 0;
+            border-left: 0.3em solid transparent;
+        }
+
+        /* Estilos específicos para dropdown de administração */
+        .navbar .dropdown {
+            position: relative;
+            z-index: 1001;
+        }
+
+        .navbar .dropdown-menu {
+            z-index: 1002 !important;
+        }
+
+        .dropdown-menu.show {
+            z-index: 1003 !important;
+        }
+
         /* Scrollbar styling */
         ::-webkit-scrollbar {
             width: 12px;
@@ -596,15 +645,25 @@
                             <a class="nav-link" href="{{ url_for('disciplinas') }}">Disciplinas</a>
                         </li>
                         {% if session.tipo_usuario == 2 %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('estatisticas') }}">📊 Estatísticas</a>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownAdmin" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                🔧 Administração
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdownAdmin" style="background: var(--darker-bg); border: 2px solid var(--neon-cyan);">
+                                <li><a class="dropdown-item" href="{{ url_for('estatisticas') }}" style="color: var(--neon-cyan); text-decoration: none;">📊 Estatísticas</a></li>
+                                <li><hr class="dropdown-divider" style="border-color: var(--neon-cyan);"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin_professores') }}" style="color: var(--neon-cyan); text-decoration: none;">👨‍🏫 Professores</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin_disciplinas') }}" style="color: var(--neon-cyan); text-decoration: none;">📚 Disciplinas</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin_turmas') }}" style="color: var(--neon-cyan); text-decoration: none;">🏫 Turmas</a></li>
+</old_str>
+                            </ul>
                         </li>
                         {% endif %}
                         {% if session.tipo_usuario == 3 %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('meus_reviews') }}">📋 Meus Reviews</a>
                         </li>
-                        {% else %}
+                        {% elif session.tipo_usuario == 1 %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('feedback') }}">Novo Feedback</a>
                         </li>
