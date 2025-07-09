@@ -8,7 +8,34 @@
         <div class="col-md-8 col-lg-6">
             <div class="card shadow">
                 <div class="card-body p-4">
-                    <h3 class="card-title text-center mb-4">Cadastro</h3>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="card-title">
+                            {% if tipo_usuario == 1 %}
+                                <span class="neon-icon">🎓</span> Cadastro de Aluno
+                            {% elif tipo_usuario == 2 %}
+                                <span class="neon-icon">👨‍💼</span> Cadastro de Administrador
+                            {% elif tipo_usuario == 3 %}
+                                <span class="neon-icon">👨‍🏫</span> Cadastro de Professor
+                            {% elif tipo_usuario == 4 %}
+                                <span class="neon-icon">🏢</span> Cadastro de Departamento
+                            {% elif tipo_usuario == 5 %}
+                                <span class="neon-icon">🔧</span> Cadastro de Técnico
+                            {% else %}
+                                Cadastro
+                            {% endif %}
+                        </h3>
+                        <a href="{{ url_for('reset_cadastro') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+
+                    {% if tipo_usuario == 3 %}
+                        <div class="alert alert-info" id="professor-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Professor:</strong> Selecione seu perfil na lista abaixo. Seu código será usado como matrícula.
+                        </div>
+                    {% endif %}
+
                     <form method="POST">
                         {{ form.hidden_tag() }}
                         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -21,6 +48,20 @@
                                 {% endfor %}
                             {% endif %}
                         {% endwith %}
+
+                        {% if tipo_usuario == 3 %}
+                            <div class="mb-3">
+                                {{ form.professor_existente.label(class="form-label") }}
+                                {{ form.professor_existente(class="form-select" + (" is-invalid" if form.professor_existente.errors else "")) }}
+                                {% if form.professor_existente.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.professor_existente.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
 
                         <div class="mb-3">
                             {{ form.nome.label(class="form-label") }}
@@ -58,6 +99,7 @@
                             {% endif %}
                         </div>
 
+                        {% if tipo_usuario != 3 %}
                         <div class="mb-3">
                             {{ form.matricula.label(class="form-label") }}
                             {{ form.matricula(class="form-control" + (" is-invalid" if form.matricula.errors else "")) }}
@@ -69,6 +111,7 @@
                                 </div>
                             {% endif %}
                         </div>
+                        {% endif %}
 
                         <div class="mb-3">
                             {{ form.senha.label(class="form-label") }}
@@ -94,17 +137,7 @@
                             {% endif %}
                         </div>
 
-                        <div class="mb-3">
-                            {{ form.tipo_usuario.label(class="form-label") }}
-                            {{ form.tipo_usuario(class="form-select" + (" is-invalid" if form.tipo_usuario.errors else "")) }}
-                            {% if form.tipo_usuario.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.tipo_usuario.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
+
 
                         <div class="d-grid">
                             {{ form.enviar(class="btn btn-success btn-lg") }}
@@ -119,4 +152,28 @@
         </div>
     </div>
 </div>
+
+{% if tipo_usuario == 3 %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const professorSelect = document.getElementById('professor_existente');
+    const professorInfo = document.getElementById('professor-info');
+
+    if (professorSelect && professorInfo) {
+        professorSelect.addEventListener('change', function() {
+            if (this.value) {
+                professorInfo.style.display = 'none';
+            } else {
+                professorInfo.style.display = 'block';
+            }
+        });
+
+        // Verificar se já há um valor selecionado ao carregar a página
+        if (professorSelect.value) {
+            professorInfo.style.display = 'none';
+        }
+    }
+});
+</script>
+{% endif %}
 {% endblock %}

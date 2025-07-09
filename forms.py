@@ -1,4 +1,3 @@
-
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, PasswordField, SelectField, TextAreaField, IntegerField, SubmitField 
@@ -14,6 +13,14 @@ class FormularioLogin(FlaskForm):
         DataRequired(message='Senha é obrigatória')
     ])
     enviar = SubmitField('Entrar')
+
+class FormularioTipoUsuario(FlaskForm):
+    tipo_usuario = SelectField('Tipo de Usuário', coerce=int,
+        choices=[(1, 'Aluno'), (2, 'Administrador'), (3, 'Professor'),
+                 (4, 'Departamento'), (5, 'Técnico Administrativo')],
+        validators=[DataRequired(message='Tipo de usuário é obrigatório')]
+    )
+    continuar = SubmitField('Continuar')
 
 class FormularioCadastro(FlaskForm):
     nome = StringField('Nome Completo', validators=[
@@ -41,14 +48,29 @@ class FormularioCadastro(FlaskForm):
         DataRequired(message='Confirmação de senha é obrigatória'),
         EqualTo('senha', message='As senhas devem ser iguais')
     ])
-    tipo_usuario = SelectField('Tipo de Usuário', coerce=int,
-        choices=[('1', 'Aluno'), ('2', 'Administrador'), ('3', 'Professor'),
-                 ('4', 'Departamento'), ('5', 'Técnico Administrativo')],
-        validators=[DataRequired(message='Tipo de usuário é obrigatório')]
-    )
+    professor_existente = SelectField('Selecione seu perfil de professor', coerce=int, validators=[])
     enviar = SubmitField('Cadastrar')
+    
+    def __init__(self, tipo_usuario=None, *args, **kwargs):
+        super(FormularioCadastro, self).__init__(*args, **kwargs)
+        if tipo_usuario == 3:  # Professor
+            from models import Professor
+            professores = Professor.query.order_by(Professor.nome_professor).all()
+            self.professor_existente.choices = [(p.codigo_professor, p.nome_professor) for p in professores]
+            self.professor_existente.validators = [DataRequired(message='Selecione seu perfil de professor')]
+            # Para professores, o campo matrícula não deve ser obrigatório pois será preenchido automaticamente
+            self.matricula.validators = []
+        else:
+            # Para outros tipos de usuário, o campo professor_existente não deve ter validação
+            self.professor_existente.validators = []
 
 class FormularioFeedback(FlaskForm):
+    periodo = SelectField('Período Letivo', coerce=int, validators=[
+        DataRequired(message='Período é obrigatório')
+    ])
+    disciplina = SelectField('Disciplina', coerce=str, validators=[
+        DataRequired(message='Disciplina é obrigatória')
+    ])
     professor = SelectField('Professor', coerce=int, validators=[
         DataRequired(message='Professor é obrigatório')
     ])
@@ -91,8 +113,19 @@ class FormularioFeedback(FlaskForm):
         FileAllowed(['pdf'], 'Apenas arquivos PDF são permitidos!')
     ])
     enviar = SubmitField('Enviar Feedback')
+    
+    def __init__(self, *args, **kwargs):
+        super(FormularioFeedback, self).__init__(*args, **kwargs)
+        from models import PeriodoLetivo, Disciplina
+        # Ordenar períodos por ano e sequencial (mais recente primeiro)
+        periodos_ordenados = PeriodoLetivo.query.order_by(PeriodoLetivo.ano_periodo.desc(), PeriodoLetivo.sequencial_periodo.desc()).all()
+        self.periodo.choices = [(p.codigo_periodo, f"{p.ano_periodo}.{p.sequencial_periodo}") for p in periodos_ordenados]
+        
+        # Carregar todas as disciplinas
+        disciplinas_ordenadas = Disciplina.query.order_by(Disciplina.nome_disciplina).all()
+        self.disciplina.choices = [(d.codigo_disciplina, f"{d.codigo_disciplina} - {d.nome_disciplina}") for d in disciplinas_ordenadas]
 
-class Disciplina(FlaskForm):
+class FormularioDisciplina(FlaskForm):
     codigo_disciplina = StringField('Código da Disciplina', validators=[
         DataRequired(message='Código da disciplina é obrigatório'),
         Length(max=10, message='Código deve ter no máximo 10 caracteres')
@@ -106,13 +139,9 @@ class Disciplina(FlaskForm):
         DataRequired(message='Nome da disciplina é obrigatório'),
         Length(max=100, message='Nome deve ter no máximo 100 caracteres')
     ])
-    
-    periodo = SelectField('Período', coerce=int, validators=[
-        DataRequired(message='Período é obrigatório')
-    ])
+
     enviar = SubmitField('Cadastrar Disciplina')
 
     def __init__(self, *args, **kwargs):
-        super(Disciplina, self).__init__(*args, **kwargs)
-        self.periodo.choices = [(p.codigo_periodo, f"{p.ano_periodo}/{p.sequencial_periodo}") for p in PeriodoLetivo.query.all()]
+        super(FormularioDisciplina, self).__init__(*args, **kwargs)
         self.departamento.choices = [(d.codigo_departamento, d.nome_departamento) for d in Departamento.query.all()]

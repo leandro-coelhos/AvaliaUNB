@@ -115,14 +115,16 @@ def popular_banco():
             db.session.add(tipo)
         db.session.commit()
 
-        # Criar períodos letivos
-        periodos = [
-            PeriodoLetivo(ano_periodo=2023, sequencial_periodo=1),
-            PeriodoLetivo(ano_periodo=2023, sequencial_periodo=2),
-            PeriodoLetivo(ano_periodo=2024, sequencial_periodo=1),
-            PeriodoLetivo(ano_periodo=2024, sequencial_periodo=2),
-            PeriodoLetivo(ano_periodo=2025, sequencial_periodo=1),
-        ]
+        # Criar períodos letivos de 2017.1 até 2025.1
+        periodos = []
+        for ano in range(2017, 2026):  # 2017 a 2025
+            if ano == 2025:
+                # Para 2025, apenas primeiro semestre
+                periodos.append(PeriodoLetivo(ano_periodo=ano, sequencial_periodo=1))
+            else:
+                # Para outros anos, primeiro e segundo semestres
+                periodos.append(PeriodoLetivo(ano_periodo=ano, sequencial_periodo=1))
+                periodos.append(PeriodoLetivo(ano_periodo=ano, sequencial_periodo=2))
 
         for periodo in periodos:
             db.session.add(periodo)
@@ -181,43 +183,55 @@ def popular_banco():
             db.session.add(usuario)
         db.session.commit()
 
-        # Criar turmas (uma para cada disciplina + algumas extras)
-        turmas = [
-            # Turmas de Ciência da Computação
-            Turma(numero_identificacao_turma=1, fk_codigo_disciplina='CIC0004', fk_codigo_periodo='2024.1'),
-            Turma(numero_identificacao_turma=2, fk_codigo_disciplina='CIC0090', fk_codigo_periodo='2024.1'),
-            Turma(numero_identificacao_turma=3, fk_codigo_disciplina='CIC0097', fk_codigo_periodo='2024.1'),
-            Turma(numero_identificacao_turma=4, fk_codigo_disciplina='CIC0201', fk_codigo_periodo='2024.2'),
-            Turma(numero_identificacao_turma=5, fk_codigo_disciplina='CIC0169', fk_codigo_periodo='2024.2'),
-
-            # Turmas de Matemática
-            Turma(numero_identificacao_turma=6, fk_codigo_disciplina='MAT0025', fk_codigo_periodo='2024.1'),
-            Turma(numero_identificacao_turma=7, fk_codigo_disciplina='MAT0026', fk_codigo_periodo='2024.1'),
-            Turma(numero_identificacao_turma=8, fk_codigo_disciplina='MAT0116', fk_codigo_periodo='2024.2'),
-            Turma(numero_identificacao_turma=9, fk_codigo_disciplina='MAT0027', fk_codigo_periodo='2024.2'),
-
-            # Turmas de Física
-            Turma(numero_identificacao_turma=10, fk_codigo_disciplina='FIS0001', fk_codigo_periodo='2024.1'),
-            Turma(numero_identificacao_turma=11, fk_codigo_disciplina='FIS0002', fk_codigo_periodo='2024.1'),
-            Turma(numero_identificacao_turma=12, fk_codigo_disciplina='FIS0003', fk_codigo_periodo='2024.2'),
-
-            # Turmas de Engenharia
-            Turma(numero_identificacao_turma=13, fk_codigo_disciplina='ENG0001', fk_codigo_periodo='2024.1'),
-            Turma(numero_identificacao_turma=14, fk_codigo_disciplina='ENG0100', fk_codigo_periodo='2024.2'),
-            Turma(numero_identificacao_turma=15, fk_codigo_disciplina='ENG0200', fk_codigo_periodo='2024.2'),
-
-            # Turmas de Estatística
-            Turma(numero_identificacao_turma=16, fk_codigo_disciplina='EST0001', fk_codigo_periodo='2024.1'),
-            Turma(numero_identificacao_turma=17, fk_codigo_disciplina='EST0002', fk_codigo_periodo='2024.2'),
-
-            # Turmas de Química
-            Turma(numero_identificacao_turma=18, fk_codigo_disciplina='QUI0001', fk_codigo_periodo='2024.1'),
-            Turma(numero_identificacao_turma=19, fk_codigo_disciplina='QUI0002', fk_codigo_periodo='2024.2'),
-
-            # Turmas extras de semestres anteriores
-            Turma(numero_identificacao_turma=20, fk_codigo_disciplina='CIC0004', fk_codigo_periodo='2023.2'),
-            Turma(numero_identificacao_turma=21, fk_codigo_disciplina='MAT0025', fk_codigo_periodo='2023.2'),
-        ]
+        # Criar turmas para todos os períodos
+        turmas = []
+        numero_turma = 1
+        
+        # Disciplinas principais que terão turmas em todos os períodos
+        disciplinas_principais = ['CIC0004', 'MAT0025', 'FIS0001', 'ENG0001']
+        
+        # Criar turmas para cada período de 2017.1 até 2025.1
+        for ano in range(2017, 2026):
+            semestres = [1, 2] if ano < 2025 else [1]  # 2025 só tem semestre 1
+            
+            for semestre in semestres:
+                periodo_codigo = f"{ano}.{semestre}"
+                
+                # Para cada período, criar pelo menos 4 turmas das disciplinas principais
+                for disciplina_codigo in disciplinas_principais:
+                    turmas.append(Turma(
+                        numero_identificacao_turma=numero_turma,
+                        fk_codigo_disciplina=disciplina_codigo,
+                        fk_codigo_periodo=periodo_codigo
+                    ))
+                    numero_turma += 1
+                
+                # Adicionar mais algumas disciplinas aleatoriamente para variedade
+                if ano >= 2020:  # A partir de 2020, adicionar mais disciplinas
+                    disciplinas_extras = ['CIC0090', 'MAT0026', 'FIS0002', 'ENG0100', 'EST0001', 'QUI0001']
+                    for i, disciplina_codigo in enumerate(disciplinas_extras):
+                        if (ano + semestre + i) % 3 == 0:  # Distribuir de forma pseudo-aleatória
+                            turmas.append(Turma(
+                                numero_identificacao_turma=numero_turma,
+                                fk_codigo_disciplina=disciplina_codigo,
+                                fk_codigo_periodo=periodo_codigo
+                            ))
+                            numero_turma += 1
+                
+                # Para períodos mais recentes (2023+), adicionar ainda mais variedade
+                if ano >= 2023:
+                    todas_disciplinas = [
+                        'CIC0097', 'CIC0201', 'CIC0169', 'MAT0116', 'MAT0027', 
+                        'FIS0003', 'ENG0200', 'EST0002', 'QUI0002'
+                    ]
+                    for i, disciplina_codigo in enumerate(todas_disciplinas):
+                        if (ano + semestre + i) % 4 == 0:  # Mais seletivo
+                            turmas.append(Turma(
+                                numero_identificacao_turma=numero_turma,
+                                fk_codigo_disciplina=disciplina_codigo,
+                                fk_codigo_periodo=periodo_codigo
+                            ))
+                            numero_turma += 1
 
         for turma in turmas:
             db.session.add(turma)

@@ -30,6 +30,7 @@ class ProceduresSimuladas:
     def buscar_feedbacks_professor(professor_id):
         """Simula: CALL BuscarFeedbacksProfessor(:prof_id)"""
         try:
+            print(f"Debug: Executando query para professor_id = {professor_id}")
             resultado = db.session.execute(text("""
             SELECT f.pfk_Num_Idf_Tur as turma_id,
                    f.pfk_Cod_Prof as professor_id,
@@ -50,7 +51,9 @@ class ProceduresSimuladas:
             WHERE f.pfk_Cod_Prof = :prof_id
             ORDER BY f.Qual DESC, f.Nvl_Dif ASC
             """), {"prof_id": professor_id})
-            return resultado.fetchall()
+            feedbacks = resultado.fetchall()
+            print(f"Debug: Query retornou {len(feedbacks)} feedbacks")
+            return feedbacks
         except Exception as e:
             print(f"Erro ao buscar feedbacks do professor: {e}")
             return []
