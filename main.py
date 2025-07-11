@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, jsonify
 import io
 from flask_sqlalchemy import SQLAlchemy
-from forms import FormularioLogin, FormularioCadastro, FormularioFeedback, FormularioDisciplina, FormularioTipoUsuario
+from forms import FormularioLogin, FormularioCadastro, FormularioFeedback, FormularioDisciplina, FormularioTipoUsuario, FormularioProfessor
 from models import db, Usuario, Professor, Turma, Feedback, Disciplina, TipoUsuario, DocumentoAvaliacao, CriterioAvaliacaoTurma
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import text
@@ -12,12 +12,12 @@ app.config['SECRET_KEY'] = 'sua_chave_secreta_aqui'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///avaliacao.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+
 db.init_app(app)
 
 with app.app_context():
     db.create_all()
 
-    # Criar views SQLite necessárias
     try:
         db.session.execute(text("""
         CREATE VIEW IF NOT EXISTS view_professores_com_feedbacks AS
@@ -102,8 +102,7 @@ def login():
             session['tipo_usuario'] = usuario.fk_codigo_tipo_usuario
             flash('Login realizado com sucesso!', 'success')
             
-            # Redirecionar professor para página de reviews
-            if usuario.fk_codigo_tipo_usuario == 3:  # Professor
+            if usuario.fk_codigo_tipo_usuario == 3:  
                 return redirect(url_for('meus_reviews'))
             else:
                 return redirect(url_for('home'))
@@ -111,33 +110,91 @@ def login():
             flash('Email ou senha incorretos!', 'danger')
     return render_template('login.html', form=formulario)
 
-@app.route('/cadastro', methods=['GET', 'POST'])
-def cadastro():
+@app.route('/tipo_usuario', methods=['GET', 'POST'])
+def tipo_usuario():
     from forms import FormularioTipoUsuario
-    
-    # Etapa 1: Seleção do tipo de usuário
-    if 'tipo_usuario_selecionado' not in session:
-        formulario_tipo = FormularioTipoUsuario()
-        if formulario_tipo.validate_on_submit():
-            session['tipo_usuario_selecionado'] = formulario_tipo.tipo_usuario.data
-            return redirect(url_for('cadastro'))
-        return render_template('selecao_tipo_usuario.html', form=formulario_tipo)
-    
-    # Etapa 2: Formulário de cadastro completo
-    tipo_usuario = session['tipo_usuario_selecionado']
-    formulario = FormularioCadastro(tipo_usuario=tipo_usuario)
-    
+    formulario_tipo = FormularioTipoUsuario()
+
+    if formulario_tipo.validate_on_submit():
+        session['tipo_usuario_selecionado'] = formulario_tipo.tipo_usuario.data
+        if formulario_tipo.tipo_usuario.data == 3:
+            return redirect(url_for('cadastro_professor'))
+        else:
+            return redirect(url_for('cadastro', tipo=formulario_tipo.tipo_usuario.data))
+
+    return render_template('selecao_tipo_usuario.html', form=formulario_tipo)
+
+
+@app.route('/cadastro_professor', methods=['GET', 'POST'])
+def cadastro_professor():
+    formulario = FormularioProfessor()
     if formulario.validate_on_submit():
         try:
-            # Para professores, usar o código do professor selecionado como matrícula
-            if tipo_usuario == 3:  # Professor
+            usuario_existente = Usuario.query.filter(
+                (Usuario.email_usuario == formulario.email.data) |
+                (Usuario.matricula_usuario == str(formulario.professor_existente.data))
+            ).first()
+
+            if usuario_existente:
+                flash('Email ou matrícula já cadastrados!', 'danger')
+                return render_template('cadastro.html', form=formulario, tipo_usuario=3)
+            # Verificar se o professor já existe
+            professor_existente = Professor.query.filter_by(codigo_professor=formulario.codigo_professor.data).first()
+            if professor_existente:
+                flash('Professor já cadastrado!', 'danger')
+                return render_template('cadastro.html', form=formulario, tipo_usuario=3)
+
+            user = Usuario(
+                nome_usuario=formulario.nome.data,
+                email_usuario=formulario.email.data,
+                telefone_usuario=formulario.telefone.data,
+                matricula_usuario=str(formulario.professor_existente.data),
+                senha_usuario=generate_password_hash(formulario.senha.data),
+                fk_codigo_tipo_usuario=3  
+            )
+
+
+            db.session.add(user)
+            db.session.commit()
+
+            flash('Cadastro de professor realizado com sucesso!', 'success')
+            return redirect(url_for('home'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao cadastrar professor: {str(e)}', 'danger')
+
+    return render_template('cadastro.html', form=formulario, tipo_usuario=3)
+
+@app.route('/cadastro/<int:tipo>/', methods=['GET', 'POST'])
+def cadastro(tipo):
+    print(tipo)
+    # Verificar se o tipo de usuário foi selecionado
+    if 'tipo_usuario_selecionado' not in session:
+        return redirect(url_for('tipo_usuario'))
+    
+    tipo_usuario = session['tipo_usuario_selecionado']
+    
+    # Criar o formulário com o tipo de usuário
+    formulario = FormularioCadastro(tipo_usuario=tipo_usuario)
+
+    print('Método:', request.method)
+    print('Tipo de usuário:', tipo_usuario)
+    print('Form enviado?', formulario.is_submitted())
+    print('Form válido?', formulario.validate())
+    print('Erros:', formulario.errors)
+
+    if formulario.validate_on_submit():
+        print('Formulário de cadastro enviado')
+        try:
+            # Lógica específica para professores
+            if tipo_usuario == 3:
                 if not formulario.professor_existente.data:
                     flash('Selecione seu perfil de professor!', 'danger')
-                    return render_template('cadastro.html', form=formulario, tipo_usuario=tipo_usuario)
+                    return render_template('cadastro.html', form=formulario, tipo_usuario=tipo)
                 matricula = str(formulario.professor_existente.data)
             else:
                 matricula = formulario.matricula.data
-            
+
             # Verificar se usuário já existe
             usuario_existente = Usuario.query.filter(
                 (Usuario.email_usuario == formulario.email.data) |
@@ -146,6 +203,7 @@ def cadastro():
 
             if usuario_existente:
                 flash('Email ou matrícula já cadastrados!', 'danger')
+                return render_template('cadastro.html', form=formulario, tipo_usuario=tipo_usuario)
             else:
                 novo_usuario = Usuario(
                     nome_usuario=formulario.nome.data,
@@ -153,20 +211,21 @@ def cadastro():
                     telefone_usuario=formulario.telefone.data,
                     matricula_usuario=matricula,
                     senha_usuario=generate_password_hash(formulario.senha.data),
-                    fk_codigo_tipo_usuario=tipo_usuario
+                    fk_codigo_tipo_usuario=tipo
                 )
                 db.session.add(novo_usuario)
                 db.session.commit()
-                
+
                 # Limpar sessão
                 session.pop('tipo_usuario_selecionado', None)
-                
+
                 flash('Cadastro realizado com sucesso! Faça login para acessar sua área.', 'success')
                 return redirect(url_for('login'))
         except Exception as e:
             db.session.rollback()
             flash(f'Erro ao realizar cadastro: {str(e)}', 'danger')
-    
+            return render_template('cadastro.html', form=formulario, tipo_usuario=tipo_usuario)
+
     return render_template('cadastro.html', form=formulario, tipo_usuario=tipo_usuario)
 
 @app.route('/cadastro/reset')
@@ -321,7 +380,9 @@ def professores_por_turma(turma_id):
     """Retorna os professores que dão aula em uma turma específica"""
     try:
         # Primeiro, buscar o professor atribuído à turma
+        print(turma_id)
         turma = Turma.query.get(turma_id)
+        print(turma)
         if not turma:
             return jsonify({"error": "Turma não encontrada"}), 404
         
@@ -737,8 +798,8 @@ def admin_novo_professor():
         flash('Acesso restrito a administradores!', 'warning')
         return redirect(url_for('home'))
     
-    from forms import FormularioProfessor
-    formulario = FormularioProfessor()
+    from forms import FormularioProfessorNovo
+    formulario = FormularioProfessorNovo()
     
     if formulario.validate_on_submit():
         novo_professor = Professor(
@@ -760,8 +821,8 @@ def admin_editar_professor(codigo_professor):
         return redirect(url_for('home'))
     
     professor = Professor.query.get_or_404(codigo_professor)
-    from forms import FormularioProfessor
-    formulario = FormularioProfessor(obj=professor)
+    from forms import FormularioProfessorNovo
+    formulario = FormularioProfessorNovo(obj=professor)
     
     if formulario.validate_on_submit():
         professor.nome_professor = formulario.nome_professor.data
@@ -821,7 +882,7 @@ def admin_nova_disciplina():
         flash('Disciplina criada com sucesso!', 'success')
         return redirect(url_for('admin_disciplinas'))
     
-    return render_template('admin_form_disciplina.html', form=formulario, titulo='Nova Disciplina')
+    return render_template('new_disciplina.html', form=formulario, titulo='Nova Disciplina')
 
 @app.route('/admin/disciplinas/<string:codigo_disciplina>/editar', methods=['GET', 'POST'])
 def admin_editar_disciplina(codigo_disciplina):
@@ -840,7 +901,7 @@ def admin_editar_disciplina(codigo_disciplina):
         flash('Disciplina atualizada com sucesso!', 'success')
         return redirect(url_for('admin_disciplinas'))
     
-    return render_template('admin_form_disciplina.html', form=formulario, titulo='Editar Disciplina', disciplina=disciplina)
+    return render_template('new_disciplina.html', form=formulario, titulo='Editar Disciplina', disciplina=disciplina)
 
 @app.route('/admin/disciplinas/<string:codigo_disciplina>/excluir', methods=['POST'])
 def admin_excluir_disciplina(codigo_disciplina):
@@ -901,11 +962,12 @@ def admin_nova_turma():
     formulario = FormularioTurma()
     
     if formulario.validate_on_submit():
+        print(formulario.professor.data)
         nova_turma = Turma(
             numero_identificacao_turma=formulario.numero_identificacao_turma.data,
             fk_codigo_disciplina=formulario.disciplina.data,
             fk_codigo_periodo=formulario.periodo.data,
-            professor_codigo=formulario.professor.data if formulario.professor.data else None
+            # professor_codigo=formulario.professor.data if formulario.professor.data else None
         )
         db.session.add(nova_turma)
         db.session.commit()
@@ -928,7 +990,7 @@ def admin_editar_turma(numero_turma):
     if formulario.validate_on_submit():
         turma.fk_codigo_disciplina = formulario.disciplina.data
         turma.fk_codigo_periodo = formulario.periodo.data
-        turma.professor_codigo = formulario.professor.data if formulario.professor.data else None
+        # turma.professor_codigo = formulario.professor.data if formulario.professor.data else None
         db.session.commit()
         flash('Turma atualizada com sucesso!', 'success')
         return redirect(url_for('admin_turmas'))

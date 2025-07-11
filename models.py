@@ -108,3 +108,4 @@ class Feedback(db.Model):
     nivel_dificuldade = db.Column('Nvl_Dif', db.SmallInteger)
     qualidade = db.Column('Qual', db.SmallInteger)
     comentario = db.Column('Coment', db.String(100))
+
