@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 import io
 from flask_sqlalchemy import SQLAlchemy
 from forms import FormularioLogin, FormularioCadastro, FormularioFeedback, FormularioDisciplina, FormularioTipoUsuario, FormularioProfessor
-from models import db, Usuario, Professor, Turma, Feedback, Disciplina, TipoUsuario, DocumentoAvaliacao, CriterioAvaliacaoTurma
+from models import db, Usuario, Professor, Turma, Feedback, Disciplina, TipoUsuario, DocumentoAvaliacao, CriterioAvaliacaoTurma, TurmaProfessor
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import text
 from procedures import ProceduresSimuladas
@@ -19,6 +19,7 @@ with app.app_context():
     db.create_all()
 
     try:
+        
         db.session.execute(text("""
         CREATE VIEW IF NOT EXISTS view_professores_com_feedbacks AS
         SELECT p.Cod_Prof as codigo_professor,
@@ -43,12 +44,16 @@ with app.app_context():
                u.Nom_Usr as nome_usuario,
                t.Num_Idf_Tur as numero_turma,
                d.Nom_Dis as nome_disciplina,
-               p.Nom_Prof as nome_professor
+               p.Nom_Prof as nome_professor,
+               t.fk_Cod_Per as periodo_codigo,
+               COALESCE(pl.Ano_Per, CAST(SUBSTR(t.fk_Cod_Per, 1, 4) AS INTEGER)) as ano_periodo,
+               COALESCE(pl.Seq_Per, CAST(SUBSTR(t.fk_Cod_Per, 6, 1) AS INTEGER)) as sequencial_periodo
         FROM Fdbk f
         JOIN Usr u ON f.pfk_Num_Idf_Usr = u.Num_Idf_Usr
         JOIN Tur t ON f.pfk_Num_Idf_Tur = t.Num_Idf_Tur
         JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
         JOIN Prof p ON f.pfk_Cod_Prof = p.Cod_Prof
+        LEFT JOIN Per_Let pl ON t.fk_Cod_Per = pl.Cod_Per
         """))
 
         db.session.execute(text("""
@@ -73,12 +78,16 @@ with app.app_context():
                f.Coment as comentario,
                u.Nom_Usr as nome_usuario,
                p.Nom_Prof as nome_professor,
-               d.Nom_Dis as nome_disciplina
+               d.Nom_Dis as nome_disciplina,
+               t.fk_Cod_Per as periodo_codigo,
+               pl.Ano_Per as ano_periodo,
+               pl.Seq_Per as sequencial_periodo
         FROM Fdbk f
         JOIN Usr u ON f.pfk_Num_Idf_Usr = u.Num_Idf_Usr
         JOIN Prof p ON f.pfk_Cod_Prof = p.Cod_Prof
         JOIN Tur t ON f.pfk_Num_Idf_Tur = t.Num_Idf_Tur
         JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
+        LEFT JOIN Per_Let pl ON t.fk_Cod_Per = pl.Cod_Per
         """))
 
         db.session.commit()
@@ -377,47 +386,36 @@ def turmas_por_periodo_disciplina(periodo_id, disciplina_codigo):
 
 @app.route('/api/professores_por_turma/<int:turma_id>')
 def professores_por_turma(turma_id):
-    """Retorna os professores que dão aula em uma turma específica"""
+    """Retorna os professores que já deram aula na disciplina da turma específica"""
     try:
-        # Primeiro, buscar o professor atribuído à turma
-        print(turma_id)
+        # Buscar a turma para obter a disciplina
         turma = Turma.query.get(turma_id)
-        print(turma)
         if not turma:
             return jsonify({"error": "Turma não encontrada"}), 404
         
-        professores_data = []
-        
-        # Se a turma tem professor atribuído, incluí-lo
-        if turma.professor_codigo:
-            professor = Professor.query.get(turma.professor_codigo)
-            if professor:
-                professores_data.append({
-                    "codigo": professor.codigo_professor,
-                    "nome": professor.nome_professor
-                })
-        
-        # Também buscar professores que já deram feedback nesta turma (caso haja outros)
+        # Buscar todos os professores que já deram aula nesta disciplina
         resultado = db.session.execute(text("""
         SELECT DISTINCT p.Cod_Prof as codigo_professor,
                p.Nom_Prof as nome_professor
         FROM Prof p
         JOIN Fdbk f ON p.Cod_Prof = f.pfk_Cod_Prof
-        WHERE f.pfk_Num_Idf_Tur = :turma_id
+        JOIN Tur t ON f.pfk_Num_Idf_Tur = t.Num_Idf_Tur
+        WHERE t.fk_Cod_Dis = :disciplina_codigo
         ORDER BY p.Nom_Prof
-        """), {"turma_id": turma_id})
-        professores_feedback = resultado.fetchall()
+        """), {"disciplina_codigo": turma.fk_codigo_disciplina})
         
-        # Adicionar professores que não estão na lista mas têm feedback
-        codigos_existentes = {p["codigo"] for p in professores_data}
-        for professor in professores_feedback:
-            if professor.codigo_professor not in codigos_existentes:
-                professores_data.append({
-                    "codigo": professor.codigo_professor,
-                    "nome": professor.nome_professor
-                })
+        professores_disciplina = resultado.fetchall()
         
-        # Se não houver nenhum professor, retornar todos os professores como fallback
+        professores_data = [
+            {
+                "codigo": professor.codigo_professor,
+                "nome": professor.nome_professor
+            }
+            for professor in professores_disciplina
+        ]
+        
+        # Se não houver professores que já deram aula nesta disciplina, 
+        # retornar todos os professores como fallback
         if not professores_data:
             professores = db.session.execute(text("""
             SELECT p.Cod_Prof as codigo_professor,
@@ -516,15 +514,18 @@ def meus_feedbacks():
         flash('Você precisa estar logado!', 'warning')
         return redirect(url_for('login'))
 
-    # Buscar feedbacks com joins para ter acesso aos dados relacionados
+    # Buscar feedbacks com joins para ter acesso aos dados relacionados incluindo período
+    from models import PeriodoLetivo
     feedbacks_data = db.session.query(
-        Feedback, Turma, Professor, Disciplina
+        Feedback, Turma, Professor, Disciplina, PeriodoLetivo
     ).join(
         Turma, Feedback.pfk_numero_identificacao_turma == Turma.numero_identificacao_turma
     ).join(
         Professor, Feedback.pfk_codigo_professor == Professor.codigo_professor
     ).join(
         Disciplina, Turma.fk_codigo_disciplina == Disciplina.codigo_disciplina
+    ).outerjoin(
+        PeriodoLetivo, Turma.fk_codigo_periodo == PeriodoLetivo.codigo_periodo
     ).filter(
         Feedback.pfk_numero_identificacao_usuario == session['usuario_id']
     ).all()
@@ -657,6 +658,9 @@ def feedbacks_detalhes(professor_id):
                 'nome_disciplina': feedback.nome_disciplina,
                 'disciplina_codigo': feedback.disciplina_codigo,
                 'nome_professor': feedback.nome_professor,
+                'periodo_codigo': feedback.periodo_codigo,
+                'ano_periodo': feedback.ano_periodo if hasattr(feedback, 'ano_periodo') else None,
+                'sequencial_periodo': feedback.sequencial_periodo if hasattr(feedback, 'sequencial_periodo') else None,
                 'documentos': documentos
             }
             feedbacks_com_documentos.append(feedback_dict)
@@ -930,24 +934,33 @@ def admin_turmas():
         flash('Acesso restrito a administradores!', 'warning')
         return redirect(url_for('home'))
     
-    # Buscar relações professor-turma baseadas exclusivamente nos feedbacks
-    resultado = db.session.execute(text("""
-    SELECT DISTINCT 
-           t.Num_Idf_Tur as numero_identificacao_turma,
-           t.fk_Cod_Dis as fk_codigo_disciplina,
-           t.fk_Cod_Per as fk_codigo_periodo,
-           f.pfk_Cod_Prof as professor_codigo,
-           d.Nom_Dis as nome_disciplina,
-           p.Nom_Prof as nome_professor,
-           COUNT(f.pfk_Num_Idf_Usr) as total_feedbacks_recebidos
-    FROM Tur t
-    JOIN Dis d ON t.fk_Cod_Dis = d.Cod_Dis
-    JOIN Fdbk f ON t.Num_Idf_Tur = f.pfk_Num_Idf_Tur
-    JOIN Prof p ON f.pfk_Cod_Prof = p.Cod_Prof
-    GROUP BY t.Num_Idf_Tur, t.fk_Cod_Dis, t.fk_Cod_Per, f.pfk_Cod_Prof, d.Nom_Dis, p.Nom_Prof
-    ORDER BY t.Num_Idf_Tur, p.Nom_Prof
-    """))
-    turmas_data = resultado.fetchall()
+    # Buscar todas as turmas com informações de professores
+    turmas_query = db.session.query(
+        Turma.numero_identificacao_turma,
+        Turma.fk_codigo_disciplina,
+        Turma.fk_codigo_periodo,
+        Turma.professor_codigo,
+        Disciplina.nome_disciplina,
+        Professor.codigo_professor,
+        Professor.nome_professor,
+        db.func.count(Feedback.pfk_numero_identificacao_usuario).label('total_feedbacks_recebidos')
+    ).join(
+        Disciplina, Turma.fk_codigo_disciplina == Disciplina.codigo_disciplina
+    ).outerjoin(
+        Professor, Turma.professor_codigo == Professor.codigo_professor
+    ).outerjoin(
+        Feedback, Turma.numero_identificacao_turma == Feedback.pfk_numero_identificacao_turma
+    ).group_by(
+        Turma.numero_identificacao_turma,
+        Turma.fk_codigo_disciplina,
+        Turma.fk_codigo_periodo,
+        Turma.professor_codigo,
+        Disciplina.nome_disciplina,
+        Professor.codigo_professor,
+        Professor.nome_professor
+    ).order_by(Turma.numero_identificacao_turma)
+    
+    turmas_data = turmas_query.all()
     
     return render_template('admin_turmas.html', turmas=turmas_data)
 
@@ -962,17 +975,30 @@ def admin_nova_turma():
     formulario = FormularioTurma()
     
     if formulario.validate_on_submit():
-        print(formulario.professor.data)
-        nova_turma = Turma(
-            numero_identificacao_turma=formulario.numero_identificacao_turma.data,
-            fk_codigo_disciplina=formulario.disciplina.data,
-            fk_codigo_periodo=formulario.periodo.data,
-            # professor_codigo=formulario.professor.data if formulario.professor.data else None
-        )
-        db.session.add(nova_turma)
-        db.session.commit()
-        flash('Turma criada com sucesso!', 'success')
-        return redirect(url_for('admin_turmas'))
+        try:
+            # Verificar se o número da turma já existe
+            numero_turma = formulario.numero_identificacao_turma.data
+            turma_existente = Turma.query.get(numero_turma)
+            
+            if turma_existente:
+                flash(f'Já existe uma turma com o número {numero_turma}!', 'danger')
+                return render_template('admin_form_turma.html', form=formulario, titulo='Nova Turma')
+            
+            nova_turma = Turma(
+                numero_identificacao_turma=numero_turma,
+                fk_codigo_disciplina=formulario.disciplina.data,
+                fk_codigo_periodo=formulario.periodo.data,
+                professor_codigo=formulario.professor.data if formulario.professor.data and formulario.professor.data > 0 else None
+            )
+            db.session.add(nova_turma)
+            
+            db.session.commit()
+            flash('Turma criada com sucesso!', 'success')
+            return redirect(url_for('admin_turmas'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao criar turma: {str(e)}', 'danger')
+            return render_template('admin_form_turma.html', form=formulario, titulo='Nova Turma')
     
     return render_template('admin_form_turma.html', form=formulario, titulo='Nova Turma')
 
@@ -987,10 +1013,15 @@ def admin_editar_turma(numero_turma):
     from forms import FormularioTurma
     formulario = FormularioTurma(obj=turma)
     
+    # Preencher dados atuais da turma no formulário
+    if formulario.professor.data == 0 and turma.professor_codigo:
+        formulario.professor.data = turma.professor_codigo
+    
     if formulario.validate_on_submit():
         turma.fk_codigo_disciplina = formulario.disciplina.data
         turma.fk_codigo_periodo = formulario.periodo.data
-        # turma.professor_codigo = formulario.professor.data if formulario.professor.data else None
+        turma.professor_codigo = formulario.professor.data if formulario.professor.data and formulario.professor.data > 0 else None
+        
         db.session.commit()
         flash('Turma atualizada com sucesso!', 'success')
         return redirect(url_for('admin_turmas'))

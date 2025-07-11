@@ -33,6 +33,9 @@
                         <div class="mb-3">
                             {{ form.numero_identificacao_turma.label(class="form-label") }}
                             {{ form.numero_identificacao_turma(class="form-control" + (" is-invalid" if form.numero_identificacao_turma.errors else ""), readonly=turma is defined) }}
+                            {% if not turma %}
+                                <div class="form-text">O sistema sugerirá automaticamente o próximo número disponível</div>
+                            {% endif %}
                             {% if form.numero_identificacao_turma.errors %}
                                 <div class="invalid-feedback">
                                     {% for error in form.numero_identificacao_turma.errors %}

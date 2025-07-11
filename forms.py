@@ -185,7 +185,7 @@ class FormularioTurma(FlaskForm):
     
     def __init__(self, *args, **kwargs):
         super(FormularioTurma, self).__init__(*args, **kwargs)
-        from models import Disciplina, PeriodoLetivo, Professor
+        from models import Disciplina, PeriodoLetivo, Professor, Turma, db
         
         # Carregar disciplinas
         disciplinas = Disciplina.query.order_by(Disciplina.nome_disciplina).all()
@@ -198,3 +198,12 @@ class FormularioTurma(FlaskForm):
         # Carregar professores (opcional)
         professores = Professor.query.order_by(Professor.nome_professor).all()
         self.professor.choices = [(0, 'Nenhum professor selecionado')] + [(p.codigo_professor, p.nome_professor) for p in professores]
+        
+        # Sugerir próximo número de turma disponível apenas se for uma nova turma
+        if not self.numero_identificacao_turma.data:
+            try:
+                ultimo_numero = db.session.query(db.func.max(Turma.numero_identificacao_turma)).scalar() or 0
+                self.numero_identificacao_turma.data = ultimo_numero + 1
+            except:
+                # Em caso de erro, usar um valor padrão
+                self.numero_identificacao_turma.data = 1

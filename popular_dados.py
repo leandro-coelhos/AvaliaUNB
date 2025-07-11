@@ -198,11 +198,14 @@ def popular_banco():
                 periodo_codigo = f"{ano}.{semestre}"
                 
                 # Para cada período, criar pelo menos 4 turmas das disciplinas principais
-                for disciplina_codigo in disciplinas_principais:
+                for i, disciplina_codigo in enumerate(disciplinas_principais):
+                    # Atribuir professores de forma determinística
+                    professor_codigo = (i % 5) + 1  # Professores 1-5 para as disciplinas principais
                     turmas.append(Turma(
                         numero_identificacao_turma=numero_turma,
                         fk_codigo_disciplina=disciplina_codigo,
-                        fk_codigo_periodo=periodo_codigo
+                        fk_codigo_periodo=periodo_codigo,
+                        professor_codigo=professor_codigo
                     ))
                     numero_turma += 1
                 
@@ -211,10 +214,12 @@ def popular_banco():
                     disciplinas_extras = ['CIC0090', 'MAT0026', 'FIS0002', 'ENG0100', 'EST0001', 'QUI0001']
                     for i, disciplina_codigo in enumerate(disciplinas_extras):
                         if (ano + semestre + i) % 3 == 0:  # Distribuir de forma pseudo-aleatória
+                            professor_codigo = ((i + 5) % 15) + 6  # Professores 6-20 para disciplinas extras
                             turmas.append(Turma(
                                 numero_identificacao_turma=numero_turma,
                                 fk_codigo_disciplina=disciplina_codigo,
-                                fk_codigo_periodo=periodo_codigo
+                                fk_codigo_periodo=periodo_codigo,
+                                professor_codigo=professor_codigo
                             ))
                             numero_turma += 1
                 
@@ -226,10 +231,12 @@ def popular_banco():
                     ]
                     for i, disciplina_codigo in enumerate(todas_disciplinas):
                         if (ano + semestre + i) % 4 == 0:  # Mais seletivo
+                            professor_codigo = ((i + 10) % 20) + 1  # Distribuir entre todos os professores
                             turmas.append(Turma(
                                 numero_identificacao_turma=numero_turma,
                                 fk_codigo_disciplina=disciplina_codigo,
-                                fk_codigo_periodo=periodo_codigo
+                                fk_codigo_periodo=periodo_codigo,
+                                professor_codigo=professor_codigo
                             ))
                             numero_turma += 1
 

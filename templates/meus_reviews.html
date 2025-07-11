@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Meus Reviews - AvaliaUNB{% endblock %}
@@ -99,6 +98,9 @@
                                     <div class="row">
                                         <div class="col-md-8">
                                             <h6 class="text-neon-green">{{ feedback.nome_disciplina }} - Turma {{ feedback.numero_turma }}</h6>
+                                            {% if feedback.ano_periodo and feedback.sequencial_periodo %}
+                                                <p class="text-muted"><small><strong>Período:</strong> {{ feedback.ano_periodo }}.{{ feedback.sequencial_periodo }}</small></p>
+                                            {% endif %}
                                             <p class="text-neon-cyan">"{{ feedback.comentario }}"</p>
                                             <small class="text-muted">- {{ feedback.nome_usuario }}</small>
                                         </div>
