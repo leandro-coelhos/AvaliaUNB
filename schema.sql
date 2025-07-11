@@ -68,9 +68,11 @@ CREATE TABLE "Tur" (
         "Num_Idf_Tur" SMALLINT NOT NULL,
         "fk_Cod_Dis" VARCHAR(10) NOT NULL,
         "fk_Cod_Per" VARCHAR(10) NOT NULL,
+        "fk_Cod_Prof" SMALLINT,
         PRIMARY KEY ("Num_Idf_Tur"),
         FOREIGN KEY("fk_Cod_Dis") REFERENCES "Dis" ("Cod_Dis"),
-        FOREIGN KEY("fk_Cod_Per") REFERENCES "Per_Let" ("Cod_Per")
+        FOREIGN KEY("fk_Cod_Per") REFERENCES "Per_Let" ("Cod_Per"),
+        FOREIGN KEY("fk_Cod_Prof") REFERENCES "Prof" ("Cod_Prof")
 )
 
 ;

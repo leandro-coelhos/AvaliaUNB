@@ -1,8 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, jsonify
 import io
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from forms import FormularioLogin, FormularioCadastro, FormularioFeedback, FormularioDisciplina, FormularioTipoUsuario, FormularioProfessor
-from models import db, Usuario, Professor, Turma, Feedback, Disciplina, TipoUsuario, DocumentoAvaliacao, CriterioAvaliacaoTurma, TurmaProfessor
+from models import db, Usuario, Professor, Turma, Feedback, Disciplina, TipoUsuario, DocumentoAvaliacao, CriterioAvaliacaoTurma
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import text
 from procedures import ProceduresSimuladas
@@ -14,6 +15,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
 db.init_app(app)
+migrate = Migrate(app, db)
 
 with app.app_context():
     db.create_all()

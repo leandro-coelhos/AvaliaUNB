@@ -109,25 +109,6 @@ class Turma(db.Model):
     professor_principal = db.relationship('Professor',
                                           backref='turmas_principais',
                                           lazy=True)
-    # Manter para compatibilidade com professores adicionais
-    professores_associados = db.relationship('TurmaProfessor',
-                                             backref='turma',
-                                             lazy=True)
-
-
-class TurmaProfessor(db.Model):
-    __tablename__ = 'turma_professor'
-
-    turma_id = db.Column(db.SmallInteger,
-                         db.ForeignKey('Tur.Num_Idf_Tur'),
-                         primary_key=True)
-    professor_codigo = db.Column(db.SmallInteger,
-                                 db.ForeignKey('Prof.Cod_Prof'),
-                                 primary_key=True)
-
-    # Relacionamentos
-    professor = db.relationship('Professor', backref='turmas_associadas')
-
 
 class TipoAvaliacao(db.Model):
     __tablename__ = 'Tp_Aval'

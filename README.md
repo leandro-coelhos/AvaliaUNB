@@ -6,6 +6,15 @@ O sistema AvaliaUNB é uma aplicação web desenvolvida em Flask para gerenciame
 
 **Repositório GitHub**: https://github.com/leandro-coelhos/AvaliaUNB.git
 
+## 0. Configuração do Ambiente
+- **Instalar virtual env**: pip install virtualenv
+- **Aplicar na pasta**: python -m venv .venv
+- **Rodar máquina virtual**: .\.venv\Scripts\Activate.ps1 (Windows) e source /.venv/bin/activate (Linux ou Mac)
+- **Instalar biblioteca**: pip install -r requirements.txt
+- **Gerar sql dos models**: python gerar_sql.py
+- **Popular dados**: python popular_dados.py
+- **Executar**: python main.py
+
 ## 1. Arquitetura do Sistema
 
 ### 1.1 Tecnologias Utilizadas
